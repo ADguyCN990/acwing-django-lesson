@@ -1,6 +1,6 @@
 # ADguy的第一个项目开发日志
 
-## 2022.7.11 项目环境准备
+## 2022.7.10 项目环境准备
 ### Docker环境搭建
 scp完镜像并放到自己的服务器里，8000端口设为开放**http**端口，20000端口设为开放ssh登录端口
 ### git环境搭建
@@ -18,16 +18,23 @@ scp完镜像并放到自己的服务器里，8000端口设为开放**http**端�
 ### 创建管理员账号
 在后台输入命令`python3 manage.py createsuperuser`，根据提示一步步走下来即可。
 
-### 项目文件说明
+### 项目文件结构
 每个app里面有4类文件时需要关注的
 - models，数据类库，定义各种数据类型
   - class user
   - class player
   - class admin
-  - 。。。
+  - ...
 - views，实现这种函数
 - urls，路由库，用于解析访问网站时要干嘛
 - templates，存html
+- static，管理静态文件
+  - css：对象的格式
+  - js：对象的逻辑，比如对象的创建于销毁，事件函数
+  - image：图片
+  - audio：声音
+  - ...
+- consumers：管理websocket函数
 
 #### game/views.py示例
 ```python
