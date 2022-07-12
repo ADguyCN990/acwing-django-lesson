@@ -20,9 +20,8 @@ class AcGameMenu {
     </div>
 </div>
 `);
-        this.hide();
+
         this.root.$ac_game.append(this.$menu);
-        this.show();
         this.$single_mode = this.$menu.find('.ac-game-menu-field-item-single-mode');
         this.$multi_mode = this.$menu.find('.ac-game-menu-field-item-multi-mode');
         this.$settings = this.$menu.find('.ac-game-menu-field-item-settings');
@@ -66,6 +65,7 @@ class AcGamePlayground {
 
         this.hide();
         this.root.$ac_game.append(this.$playground);
+        this.show();
 
         this.start();
     }

@@ -7,6 +7,7 @@ class AcGamePlayground {
 
         this.hide();
         this.root.$ac_game.append(this.$playground);
+        this.show();
 
         this.start();
     }
