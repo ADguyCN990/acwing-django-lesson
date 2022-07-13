@@ -130,9 +130,10 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
     }
 
     render() { //该函数的作用是把画布画出来
-        this.ctx.fillStyle = "rgba(0, 0, 0, 0.9)"; //设置为透明的黑色，这样移动会有残影
-        this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
         //this.ctx.drawImage("/static/image/menu/KaEr.jpg", 0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+        this.ctx.fillStyle = "rgba(0, 0, 0, 0.5)"; //设置为透明的黑色，这样移动会有残影
+        this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+        
     }
 }class Player extends AcGameObject {
     constructor(playground, x, y, radius, color, speed, is_me) {
