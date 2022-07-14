@@ -14,6 +14,7 @@ class Player extends AcGameObject {
         this.vy = 0; //y方向上的移动速度 
         this.is_alive = true; //是否存活
         this.move_length = 0; //移动到目标点的距离
+        this.cur_skill = null; //当前有没有选择技能，默认无技能
     }
 
     start() { //开始时执行
@@ -31,10 +32,27 @@ class Player extends AcGameObject {
 
         this.playground.game_map.$canvas.mousedown(function(e) { //鼠标监听
             if (!outer.is_alive) return false;
-            if (e.which == 3) {
+            if (e.which == 3) { //右键移动
                 outer.move_to(e.clientX, e.clientY);
             }
+            else if (e.which == 1) { //左键释放技能
+                if (outer.cur_skill == "fireball") {
+                    outer.shoot_fireball(e.clientX, e.clientY); //朝鼠标点击的位置释放一个火球
+                    
+                }
+            }
         });
+
+        $(window).keydown(function(e) {
+            if (e.which === 81) { //按下Q，释放火球技能
+                outer.cur_skill = "fireball";
+                return false;
+            }
+        });
+    }
+
+    shoot_fireball() {
+        console.log("fireball!!!");
     }
 
     get_dis(x, y, tx, ty) {
@@ -44,7 +62,7 @@ class Player extends AcGameObject {
     }
 
     move_to(tx, ty) { //从一个点到另一个点，需要求出距离，x，y方向上的速度
-        console.log("move to: ", tx, ty);
+        //console.log("move to: ", tx, ty);
         this.move_length = this.get_dis(this.x, this.y, tx, ty);
         let angle = Math.atan2(ty - this.y, tx - this.x);
         this.vx = Math.cos(angle);
@@ -60,7 +78,7 @@ class Player extends AcGameObject {
         }
         else {
             let move_vector = Math.min(this.move_length, this.speed * this.timedelta / 1000); //向量的模长，和总距离取个较小值放置越界
-            console.log(this.move_length);
+            //console.log(this.move_length);
             this.x += move_vector * this.vx;
             this.y += move_vector * this.vy;
             this.move_length -= move_vector;

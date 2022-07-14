@@ -13,7 +13,7 @@ class GameMap extends AcGameObject {
 
     }
 
-    update() {
+    update() { 
         this.render();
     }
 
