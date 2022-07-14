@@ -4,6 +4,7 @@ class FireBall extends AcGameObject {
         this.playground = playground;
         this.x = x;
         this.y = y;
+        this.ctx = this.playground.game_map.ctx;
         this.vx = vx; //横坐标上的速度
         this.vy = vy; //纵坐标上的速度
         this.eps = 0.1;

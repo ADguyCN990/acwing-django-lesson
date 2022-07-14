@@ -38,7 +38,6 @@ class Player extends AcGameObject {
             else if (e.which == 1) { //左键释放技能
                 if (outer.cur_skill == "fireball") {
                     outer.shoot_fireball(e.clientX, e.clientY); //朝鼠标点击的位置释放一个火球
-                    
                 }
 
                 outer.cur_skill = null;
@@ -53,8 +52,16 @@ class Player extends AcGameObject {
         });
     }
 
-    shoot_fireball() {
+    shoot_fireball(tx, ty) {
         console.log("fireball!!!");
+        let x = this.x, y = this.y;
+        let radius = this.playground.height * 0.01;
+        let color = "orange";
+        let angle = Math.atan2(ty - y, tx - x);
+        let vx = Math.cos(angle), vy = Math.sin(angle);
+        let speed = this.playground.height * 0.4;
+        let move_length = this.playground.height;
+        new FireBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length);
     }
 
     get_dis(x, y, tx, ty) {
