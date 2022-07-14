@@ -125,8 +125,7 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
 
     }
 
-    update() {
-        
+    update() { 
         this.render();
     }
 
@@ -176,8 +175,10 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
             else if (e.which == 1) { //左键释放技能
                 if (outer.cur_skill == "fireball") {
                     outer.shoot_fireball(e.clientX, e.clientY); //朝鼠标点击的位置释放一个火球
-                    console.log("fireball!!!");
+                    
                 }
+
+                outer.cur_skill = null;
             }
         });
 
@@ -190,7 +191,7 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
     }
 
     shoot_fireball() {
-
+        console.log("fireball!!!");
     }
 
     get_dis(x, y, tx, ty) {

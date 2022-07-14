@@ -40,6 +40,8 @@ class Player extends AcGameObject {
                     outer.shoot_fireball(e.clientX, e.clientY); //朝鼠标点击的位置释放一个火球
                     
                 }
+
+                outer.cur_skill = null;
             }
         });
 
