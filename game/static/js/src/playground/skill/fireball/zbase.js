@@ -1,5 +1,5 @@
 class FireBall extends AcGameObject {
-    constructor(playground, x, y, vx, vy, radius, color, speed, player, move_length) {
+    constructor(playground, x, y, vx, vy, radius, color, speed, player, move_length, damage) {
         super();
         this.playground = playground;
         this.x = x;
@@ -13,6 +13,7 @@ class FireBall extends AcGameObject {
         this.speed = speed;
         this.player = player; //发射火球的玩家
         this.move_length = move_length; //火球的射程
+        this.damage = damage;
     }
 
     start() {
@@ -30,8 +31,38 @@ class FireBall extends AcGameObject {
             this.x += move_vector * this.vx;
             this.y += move_vector * this.vy;
             this.move_length -= move_vector;
+
+            for (let i = 0; i < this.playground.players.length; i++) {
+                let player = this.playground.players[i];
+                if (this.player != player && this.is_collision(player)) { //自己不会受到自己的攻击，另外火球碰到了另外的玩家
+                    this.attack(player);
+                }
+            }
         }
         this.render();
+    }
+
+    get_dist(x, y, xx, yy) {
+        let a = x - xx;
+        let b = y - yy;
+        return Math.sqrt(a * a + b * b);
+    }
+
+    attack(player) {
+        let angle = Math.atan2(player.y - this.y, player.x - this.x);
+        player.is_attacked(angle, this.damage, this.damage * 100, 1.1);
+        this.destroy();
+    }
+
+    is_collision(player) {
+        let dis = this.get_dist(this.x, this.y, player.x, player.y);
+        let safe = this.radius + player.radius;
+        if (dis < safe) {
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 
     render() { //渲染火球

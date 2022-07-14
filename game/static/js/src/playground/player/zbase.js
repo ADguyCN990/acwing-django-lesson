@@ -12,6 +12,10 @@ class Player extends AcGameObject {
         this.eps = 0.1; //小于eps就认定为距离为0，因为涉及到浮点数运算
         this.vx = 0; //x方向上的移动速度
         this.vy = 0; //y方向上的移动速度 
+        this.damage_x = 0; //被击退后
+        this.damage_y = 0; //被击退后
+        this.damage_speed = 0; //被击退后
+        this.friction = 0.9; //减速度
         this.is_alive = true; //是否存活
         this.move_length = 0; //移动到目标点的距离
         this.cur_skill = null; //当前有没有选择技能，默认无技能
@@ -66,7 +70,8 @@ class Player extends AcGameObject {
         let vx = Math.cos(angle), vy = Math.sin(angle);
         let speed = this.playground.height * 0.4;
         let move_length = this.playground.height;
-        new FireBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length);
+        let damage = this.playground.height * 0.01;
+        new FireBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
     }
 
     get_dis(x, y, tx, ty) {
@@ -83,25 +88,49 @@ class Player extends AcGameObject {
         this.vy = Math.sin(angle);
     }
 
+    is_attacked(angle, damage, damage_speed, is_speed_up) {
+        //damage_speed决定了后退的距离，若足够小可以当做眩晕技能使用
+        //is_speed_up决定了被击中的玩家在这之后的速度是多少
+        this.radius -= damage;
+        if (this.radius < 10) {
+            this.destroy();
+            return false;
+        }
+        this.damage_x = Math.cos(angle);
+        this.damage_y = Math.sin(angle);
+        this.damage_speed = damage_speed;
+        this.speed *= is_speed_up;
+    }
+
     update() { //除开始外的其他帧执行
         //实现每一帧的玩家移动功能
-        if (this.move_length < this.eps) { //到达目标点，停止继续移动
-            this.vx = 0;
-            this.vy = 0;
+        if (this.damage_speed > this.eps) { //如果是在被击退的状态下
+            this.vx = 0, this.vy = 0;
             this.move_length = 0;
-            if (!this.is_me) {
-                let tx = Math.random() * this.playground.width;
-                let ty = Math.random() * this.playground.height;
-                this.move_to(tx, ty);
-            }
+            this.x += this.damage_speed * this.damage_x * this.timedelta / 1000;
+            this.y += this.damage_speed * this.damage_y * this.timedelta / 1000;
+            this.damage_speed *= this.friction;
         }
         else {
-            let move_vector = Math.min(this.move_length, this.speed * this.timedelta / 1000); //向量的模长，和总距离取个较小值放置越界
-            //console.log(this.move_length);
-            this.x += move_vector * this.vx;
-            this.y += move_vector * this.vy;
-            this.move_length -= move_vector;
+            if (this.move_length < this.eps) { //到达目标点，停止继续移动
+                this.vx = 0;
+                this.vy = 0;
+                this.move_length = 0;
+                if (!this.is_me) {
+                    let tx = Math.random() * this.playground.width;
+                    let ty = Math.random() * this.playground.height;
+                    this.move_to(tx, ty);
+                }
+            }
+            else {
+                let move_vector = Math.min(this.move_length, this.speed * this.timedelta / 1000); //向量的模长，和总距离取个较小值放置越界
+                //console.log(this.move_length);
+                this.x += move_vector * this.vx;
+                this.y += move_vector * this.vy;
+                this.move_length -= move_vector;
+            }
         }
+        
         this.render();
     }
 
