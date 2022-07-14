@@ -22,6 +22,11 @@ class Player extends AcGameObject {
         if (this.is_me) {
             this.add_listenting_events(); //只能用鼠标键盘操控自身，也就是只对自身加一个监听函数
         }
+        else {
+            let tx = Math.random() * this.playground.width;
+            let ty = Math.random() * this.playground.height;
+            this.move_to(tx, ty);
+        }
     }
 
     add_listenting_events() {
@@ -84,6 +89,11 @@ class Player extends AcGameObject {
             this.vx = 0;
             this.vy = 0;
             this.move_length = 0;
+            if (!this.is_me) {
+                let tx = Math.random() * this.playground.width;
+                let ty = Math.random() * this.playground.height;
+                this.move_to(tx, ty);
+            }
         }
         else {
             let move_vector = Math.min(this.move_length, this.speed * this.timedelta / 1000); //向量的模长，和总距离取个较小值放置越界

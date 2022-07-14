@@ -160,6 +160,11 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         if (this.is_me) {
             this.add_listenting_events(); //只能用鼠标键盘操控自身，也就是只对自身加一个监听函数
         }
+        else {
+            let tx = Math.random() * this.playground.width;
+            let ty = Math.random() * this.playground.height;
+            this.move_to(tx, ty);
+        }
     }
 
     add_listenting_events() {
@@ -222,6 +227,11 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
             this.vx = 0;
             this.vy = 0;
             this.move_length = 0;
+            if (!this.is_me) {
+                let tx = Math.random() * this.playground.width;
+                let ty = Math.random() * this.playground.height;
+                this.move_to(tx, ty);
+            }
         }
         else {
             let move_vector = Math.min(this.move_length, this.speed * this.timedelta / 1000); //向量的模长，和总距离取个较小值放置越界
@@ -299,7 +309,8 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         this.game_map = new GameMap(this); //创建一个地图
         this.players = []; //创建一个存储玩家信息的列表
         this.players.push(new Player(this, this.width / 2, this.height / 2, this.height * 0.05, "white", this.height * 0.25, true));
-
+        for (let i = 0; i < 6; i++)
+        this.players.push(new Player(this, this.width / 2, this.height / 2, this.height * 0.05, "blue", this.height * 0.25, false));
         this.show();
 
         this.start();
