@@ -136,6 +136,48 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
         
     }
+}class Particle extends AcGameObject {
+    constructor(playground, x, y, radius, vx, vy, speed, color, move_length) {
+        super();
+        this.playground = playground;
+        this.ctx = this.playground.game_map.ctx;
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.vx = vx;
+        this.vy = vy;
+        this.speed = speed;
+        this.color = color;
+        this.move_length = move_length;
+        this.friction = 0.9;
+        this.eps = 1;
+    }
+
+    start() {
+
+    }
+
+    update() {
+        if (this.speed < this.eps || this.move_length < this.eps) {
+            this.destroy();
+            return false;
+        }
+        else {
+            let move_vector = Math.min(this.move_length, this.speed * this.timedelta / 1000);
+            this.x += this.vx * move_vector;
+            this.y += this.vy * move_vector;
+            this.speed *= this.friction;
+            this.move_length -= move_vector;
+        }
+        this.render();
+    }
+
+    render() { //渲染粒子效果
+        this.ctx.beginPath();
+        this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+        this.ctx.fillStyle = this.color;
+        this.ctx.fill();
+    }
 }class Player extends AcGameObject {
     constructor(playground, x, y, radius, color, speed, is_me) {
         super();
@@ -206,7 +248,7 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         let color = "orange";
         let angle = Math.atan2(ty - y, tx - x);
         let vx = Math.cos(angle), vy = Math.sin(angle);
-        let speed = this.playground.height * 0.4;
+        let speed = this.playground.height * 0.5;
         let move_length = this.playground.height;
         let damage = this.playground.height * 0.01;
         new FireBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
@@ -238,6 +280,17 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         this.damage_y = Math.sin(angle);
         this.damage_speed = damage_speed;
         this.speed *= is_speed_up;
+
+        for (let i = 0; i < 15 + Math.random() * 5; i++) {
+            let x = this.x, y = this.y;
+            let radius = this.radius * Math.random() * 0.15; 
+            let angle = Math.PI * 2 * Math.random();
+            let vx = Math.cos(angle), vy = Math.sin(angle);
+            let color = this.color;
+            let speed = this.speed * 10;
+            let move_length = this.radius * Math.random() * 7;
+            new Particle(this.playground, x, y, radius, vx, vy, speed, color, move_length);
+        }
     }
 
     update() { //除开始外的其他帧执行
@@ -248,6 +301,9 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
             this.x += this.damage_speed * this.damage_x * this.timedelta / 1000;
             this.y += this.damage_speed * this.damage_y * this.timedelta / 1000;
             this.damage_speed *= this.friction;
+            if (this.damage_speed < this.speed * 0.3) {
+                this.damage_speed = 0;
+            }
         }
         else {
             if (this.move_length < this.eps) { //到达目标点，停止继续移动
@@ -329,13 +385,13 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         return Math.sqrt(a * a + b * b);
     }
 
-    attack(player) {
+    attack(player) { //攻击玩家
         let angle = Math.atan2(player.y - this.y, player.x - this.x);
         player.is_attacked(angle, this.damage, this.damage * 100, 1.1);
         this.destroy();
     }
 
-    is_collision(player) {
+    is_collision(player) { //检测火球与玩家是否碰撞
         let dis = this.get_dist(this.x, this.y, player.x, player.y);
         let safe = this.radius + player.radius;
         if (dis < safe) {
@@ -370,7 +426,7 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         this.players = []; //创建一个存储玩家信息的列表
         this.players.push(new Player(this, this.width / 2, this.height / 2, this.height * 0.05, "white", this.height * 0.25, true));
         for (let i = 0; i < 6; i++)
-        this.players.push(new Player(this, this.width / 2, this.height / 2, this.height * 0.05, "blue", this.height * 0.25, false));
+        this.players.push(new Player(this, this.width / 2, this.height / 2, this.height * 0.05, "green", this.height * 0.25, false));
         this.show();
 
         this.start();

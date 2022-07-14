@@ -68,7 +68,7 @@ class Player extends AcGameObject {
         let color = "orange";
         let angle = Math.atan2(ty - y, tx - x);
         let vx = Math.cos(angle), vy = Math.sin(angle);
-        let speed = this.playground.height * 0.4;
+        let speed = this.playground.height * 0.5;
         let move_length = this.playground.height;
         let damage = this.playground.height * 0.01;
         new FireBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
@@ -100,6 +100,17 @@ class Player extends AcGameObject {
         this.damage_y = Math.sin(angle);
         this.damage_speed = damage_speed;
         this.speed *= is_speed_up;
+
+        for (let i = 0; i < 15 + Math.random() * 5; i++) {
+            let x = this.x, y = this.y;
+            let radius = this.radius * Math.random() * 0.15; 
+            let angle = Math.PI * 2 * Math.random();
+            let vx = Math.cos(angle), vy = Math.sin(angle);
+            let color = this.color;
+            let speed = this.speed * 10;
+            let move_length = this.radius * Math.random() * 7;
+            new Particle(this.playground, x, y, radius, vx, vy, speed, color, move_length);
+        }
     }
 
     update() { //除开始外的其他帧执行
@@ -110,6 +121,9 @@ class Player extends AcGameObject {
             this.x += this.damage_speed * this.damage_x * this.timedelta / 1000;
             this.y += this.damage_speed * this.damage_y * this.timedelta / 1000;
             this.damage_speed *= this.friction;
+            if (this.damage_speed < this.speed * 0.3) {
+                this.damage_speed = 0;
+            }
         }
         else {
             if (this.move_length < this.eps) { //到达目标点，停止继续移动

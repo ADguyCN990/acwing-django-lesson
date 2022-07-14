@@ -15,7 +15,7 @@ class AcGamePlayground {
         this.players = []; //创建一个存储玩家信息的列表
         this.players.push(new Player(this, this.width / 2, this.height / 2, this.height * 0.05, "white", this.height * 0.25, true));
         for (let i = 0; i < 6; i++)
-        this.players.push(new Player(this, this.width / 2, this.height / 2, this.height * 0.05, "blue", this.height * 0.25, false));
+        this.players.push(new Player(this, this.width / 2, this.height / 2, this.height * 0.05, "green", this.height * 0.25, false));
         this.show();
 
         this.start();

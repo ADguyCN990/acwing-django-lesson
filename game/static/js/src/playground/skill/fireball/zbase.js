@@ -48,13 +48,13 @@ class FireBall extends AcGameObject {
         return Math.sqrt(a * a + b * b);
     }
 
-    attack(player) {
+    attack(player) { //攻击玩家
         let angle = Math.atan2(player.y - this.y, player.x - this.x);
         player.is_attacked(angle, this.damage, this.damage * 100, 1.1);
         this.destroy();
     }
 
-    is_collision(player) {
+    is_collision(player) { //检测火球与玩家是否碰撞
         let dis = this.get_dist(this.x, this.y, player.x, player.y);
         let safe = this.radius + player.radius;
         if (dis < safe) {
