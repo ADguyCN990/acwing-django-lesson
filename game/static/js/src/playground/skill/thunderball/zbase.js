@@ -50,6 +50,8 @@ class ThunderBall extends AcGameObject {
 
     attack(player) { //攻击玩家
         let angle = Math.atan2(player.y - this.y, player.x - this.x);
+        //damage_speed决定了后退的距离，若足够小可以当做眩晕技能使用
+        //is_speed_up决定了被击中的玩家在这之后的速度是多少
         player.is_attacked(angle, this.damage, this.damage * 1, 1);
         this.destroy();
     }

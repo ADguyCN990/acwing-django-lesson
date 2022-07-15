@@ -1,4 +1,4 @@
-class Particle extends AcGameObject {
+class Particle extends AcGameObject { //实现粒子特效(其实就是随机生成好多个大小随机的小球)
     constructor(playground, x, y, radius, vx, vy, speed, color, move_length) {
         super();
         this.playground = playground;

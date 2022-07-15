@@ -168,9 +168,13 @@ class Player extends AcGameObject {
     }
 
     update() { //除开始外的其他帧执行
+
+        //减CD
         this.fire_ball_cd = Math.max(0, this.fire_ball_cd - this.timedelta / 1000)
         this.ice_ball_cd = Math.max(0, this.ice_ball_cd - this.timedelta / 1000);
         this.thunder_ball_cd = Math.max(0, this.thunder_ball_cd - this.timedelta / 1000);
+
+        //AI随机放技能
         if (Math.random() < 1 / 180 && !this.is_me) {
             let player = this.playground.players[0]; 
             let id = Math.floor(Math.random() * 3);
