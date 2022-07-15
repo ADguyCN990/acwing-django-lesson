@@ -11,7 +11,7 @@ class Particle extends AcGameObject {
         this.speed = speed;
         this.color = color;
         this.move_length = move_length;
-        this.friction = 0.9;
+        this.friction = 0.9; //减速度
         this.eps = 1;
     }
 
@@ -20,7 +20,7 @@ class Particle extends AcGameObject {
     }
 
     update() {
-        if (this.speed < this.eps || this.move_length < this.eps) {
+        if (this.speed < 20 || this.move_length < this.eps) {
             this.destroy();
             return false;
         }
