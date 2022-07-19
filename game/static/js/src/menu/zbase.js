@@ -1,6 +1,7 @@
 class AcGameMenu {
-    constructor(root) {
+    constructor(root, AcWingOS) {
         this.root = root;
+        this.AcWingOS = AcWingOS;
         this.$menu = $(`
 <div class="ac-game-menu">
     <div class="title">Let's play some DOTA</div>    
@@ -20,7 +21,7 @@ class AcGameMenu {
     </div>
 </div>
 `);
-
+        this.$menu.hide();
         this.root.$ac_game.append(this.$menu);
         this.$single_mode = this.$menu.find('.ac-game-menu-field-item-single-mode');
         this.$multi_mode = this.$menu.find('.ac-game-menu-field-item-multi-mode');

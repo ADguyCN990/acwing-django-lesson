@@ -1,6 +1,7 @@
 class AcGameMenu {
-    constructor(root) {
+    constructor(root, AcWingOS) {
         this.root = root;
+        this.AcWingOS = AcWingOS;
         this.$menu = $(`
 <div class="ac-game-menu">
     <div class="title">Let's play some DOTA</div>    
@@ -20,7 +21,7 @@ class AcGameMenu {
     </div>
 </div>
 `);
-
+        this.$menu.hide();
         this.root.$ac_game.append(this.$menu);
         this.$single_mode = this.$menu.find('.ac-game-menu-field-item-single-mode');
         this.$multi_mode = this.$menu.find('.ac-game-menu-field-item-multi-mode');
@@ -202,6 +203,12 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         this.fire_ball_cd = 5;
         this.ice_ball_cd = 5;
         this.thunder_ball_cd = 5;
+
+
+        if (this.is_me) {
+            this.img = new Image();
+            this.img.src = this.playground.root.settings.photo;
+        }
     }
 
     start() { //开始时执行
@@ -405,10 +412,23 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
     }
 
     render() { //把玩家画出来，一个圆（直接抄的菜鸟教程）
-        this.ctx.beginPath();
-        this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
-        this.ctx.fillStyle = this.color;
-        this.ctx.fill();
+
+        if (this.is_me) {
+            this.ctx.save();
+            this.ctx.beginPath();
+            this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+            this.ctx.stroke();
+            this.ctx.clip();
+            this.ctx.drawImage(this.img, this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2); 
+            this.ctx.restore();
+        }
+        else {
+            this.ctx.beginPath();
+            this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+            this.ctx.fillStyle = this.color;
+            this.ctx.fill();
+        }
+        
 
     }
 }class FireBall extends AcGameObject {
@@ -680,13 +700,69 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
     }
 }
 
-export class AcGame {
-    constructor(id) {
+class Settings {
+    constructor(root) {
+        this.root = root;
+        this.platform = "WEB";
+        this.username = "";
+        this.photo = "";
+        if (this.root.AcWingOS) this.platform = "ACAPP";
+        this.start();
+    }
+
+
+    start() {
+        this.getinfo();
+    }
+
+    getinfo() { //从服务端获取信息
+        let outer = this;
+        $.ajax({
+            url: "https://app2796.acapp.acwing.com.cn/settings/getinfo/",
+            type: "GET", 
+            data: {
+                platform: outer.platform,
+            },
+            success: function(resp) {
+                console.log(resp);
+                if (resp.result == "success") { //登录成功就打开菜单界面 
+                    //存储用户信息和用户头像
+                    outer.photo = resp.photo;
+                    outer.username = resp.username;  
+                    outer.hide();
+                    outer.root.menu.show();
+                }
+                else {
+                    outer.login();
+                }
+            }
+        });
+    }
+
+    hide() {
+
+    }
+
+    show() {
+
+    }
+
+    login() { //打开登录界面
+
+    }
+
+    register() { //打开注册界面
+
+    }
+}export class AcGame {
+    constructor(id, AcWingOS) {
         this.id = id;
         this.$ac_game = $('#' + id);
+        this.AcWingOS = AcWingOS;
+        this.settings = new Settings(this);
         this.menu = new AcGameMenu(this);
         this.playground = new AcGamePlayground(this);
-
+        
         this.start();
     }
 
