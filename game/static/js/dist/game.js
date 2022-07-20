@@ -15,7 +15,7 @@ class AcGameMenu {
         </div>
         <br>
         <div class="ac-game-menu-field-item ac-game-menu-field-item-settings">
-            设置
+            退出
         </div>
         
     </div>
@@ -45,6 +45,7 @@ class AcGameMenu {
         });
         this.$settings.click(function(){
             console.log("click settings");
+            outer.root.settings.logout_on_remote();
         });
     }
 
@@ -893,7 +894,18 @@ class Settings {
     }
 
     logout_on_remote() { //在远程服务器登出
-    
+        if (this.platform == "ACAPP") return false;
+
+        $.ajax({
+            url: "https://app2796.acapp.acwing.com.cn/settings/logout/", 
+            type: "GET", 
+            success: function(resp) {
+                console.log(resp);
+                if (resp.result == "success") {
+                    location.reload();
+                }
+            }
+        });
     }
 
     register_on_remote() { //在远程服务器上注册
