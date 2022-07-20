@@ -163,6 +163,7 @@ class Settings {
         this.$login_submit.click(function() {
             outer.login_on_remote();
         });
+
     }
 
     login_on_remote() { //登录远程服务器
@@ -206,7 +207,30 @@ class Settings {
     }
 
     register_on_remote() { //在远程服务器上注册
-    
+        let outer = this;
+        let username = this.$register_username.val();
+        let password = this.$register_password.val();
+        let pasword_confirm = this.$register_password_confirm.val();
+        this.$login_error_message.empty(); //每次试图登录时，都会情况上一次登录失败的状况
+
+        $.ajax({
+            url: "https://app2796.acapp.acwing.com.cn/settings/register/",
+            type: "GET", 
+            data: {
+                username: username, 
+                password: password, 
+                password_confirm: pasword_confirm,
+            }, 
+            success: function(resp) {
+                console.log(resp);
+                if (resp.result == "success") {
+                    location.reload();
+                }
+                else {
+                    outer.$register_error_message.html(resp.result);
+                }
+            }
+        });
     }
 
 
@@ -216,6 +240,11 @@ class Settings {
         let outer = this;
         this.$register_login.click(function() {
             outer.login();
+        });
+
+        //实现注册
+        this.$register_submit.click(function() {
+            outer.register_on_remote();
         });
     }
 
