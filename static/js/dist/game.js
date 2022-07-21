@@ -823,11 +823,16 @@ class Settings {
 
 
     start() {
-        this.getinfo();
-        this.add_listening_events();
+        if (this.platform == "WEB") {
+            this.getinfo_web();
+            this.add_listening_events();
+        }   
+        else if (this.platform == "ACAPP")  {
+            this.getinfo_acapp();
+        }
     }
 
-    getinfo() { //从服务端获取信息
+    getinfo_web() { //从服务端获取信息
         let outer = this;
         $.ajax({
             url: "https://app2796.acapp.acwing.com.cn/settings/getinfo/",
@@ -848,6 +853,34 @@ class Settings {
                     outer.login();
                 }
             }
+        });
+    }
+
+    acapp_login(appid, redirect_uri, scope, state) {
+        let outer = this;
+
+        this.root.AcWingOS.api.oauth2.authorize(appid, redirect_uri, scope, state, function(resp) { 
+        // 照抄讲义上的，调用api，最后一个参数是返回之后调用的函数
+            console.log(resp); // 测试
+            if (resp.result === "success") {
+                outer.username = resp.username;
+                outer.photo = resp.photo;
+                outer.hide();
+                outer.root.menu.show();
+            }
+        });
+    }
+
+    getinfo_acapp() {
+        let outer = this;
+        $.ajax({
+            url: "https://app2796.acapp.acwing.com.cn/settings/acwing/acapp/apply_code/",
+            type: "GET",
+            success (resp) {
+                if (resp.result == "success") {
+                    outer.acapp_login(resp.appid, resp.redirect_uri, resp.scope, resp.state);
+                }
+            },
         });
     }
 
