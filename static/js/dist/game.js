@@ -800,6 +800,7 @@ class Settings {
         this.$login_submit = this.$login.find(".ac-game-settings-submit button");
         this.$login_error_message = this.$login.find(".ac-game-settings-errormessage");
         this.$login_register = this.$login.find(".ac-game-settings-option");
+        this.$acwing_login = this.$login.find(".ac-game-settings-acwing img")
 
         this.$login.hide();
 
@@ -853,6 +854,28 @@ class Settings {
     add_listening_events() {
         this.add_listening_events_login();
         this.add_listening_events_register();
+        this.add_listening_events_acwing(); //acwing一键登录
+    }
+
+    add_listening_events_acwing() { //实现acwing一键登录
+        let outer = this;
+        this.$acwing_login.click(function() {
+            outer.acwing_login();
+        });
+    }
+
+    acwing_login() {
+        $.ajax({
+            url: "https://app2796.acapp.acwing.com.cn/settings/acwing/web/apply_code",
+            type: "GET", 
+            success: function(resp) {
+                console.log(resp);
+                if (resp.result == "success") { //如果成功收到后台的appid, redirect_uri, scope, state的话就重定向到授权网址
+                    window.location.replace(resp.apply_code_url);
+                }
+            }
+
+        });
     }
 
     add_listening_events_login() { //登录界面的监听函数
