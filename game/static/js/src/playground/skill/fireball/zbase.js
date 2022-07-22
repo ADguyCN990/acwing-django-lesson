@@ -7,7 +7,7 @@ class FireBall extends AcGameObject {
         this.ctx = this.playground.game_map.ctx;
         this.vx = vx; //横坐标上的速度
         this.vy = vy; //纵坐标上的速度
-        this.eps = 0.1;
+        this.eps = 0.01;
         this.radius = radius;
         this.color = color;
         this.speed = speed;
@@ -68,8 +68,9 @@ class FireBall extends AcGameObject {
     }
 
     render() { //渲染火球
+        let scale = this.playground.scale;
         this.ctx.beginPath();
-        this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+        this.ctx.arc(this.x * scale, this.y * scale, this.radius * scale, 0, Math.PI * 2, false);
         this.ctx.fillStyle = this.color;
         this.ctx.fill();
     }

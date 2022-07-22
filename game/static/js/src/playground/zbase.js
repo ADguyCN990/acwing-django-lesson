@@ -6,7 +6,7 @@ class AcGamePlayground {
         
             </div>
         `);
-
+        this.root.$ac_game.append(this.$playground);
         this.hide();
         this.start();
         
@@ -17,21 +17,34 @@ class AcGamePlayground {
         return colors[Math.floor(Math.random() * colors.length)];
     }
 
-    start() {
-        
+    start() { //动态调整窗口大小
+        let outer = this;
+        $(window).resize(function () {
+             outer.resize();
+        });
+    }
+
+    resize() { //动态保持长宽比
+        this.width = this.$playground.width();
+        this.height = this.$playground.height();
+        let unit = Math.min(this.width / 16, this.height / 9);
+        this.width = unit * 16;
+        this.height = unit * 9;
+        this.scale = this.height;
+        if (this.game_map) this.game_map.resize();
     }
 
     show() {  // 打开playground界面
         this.$playground.show();
-        this.$playground.show();
-        this.root.$ac_game.append(this.$playground);
+        this.resize();
+        
         this.height = this.$playground.height();
         this.width = this.$playground.width();
         this.game_map = new GameMap(this); //创建一个地图
         this.players = []; //创建一个存储玩家信息的列表
-        this.players.push(new Player(this, this.width / 2, this.height / 2, this.height * 0.05, "white", this.height * 0.25, true));
+        this.players.push(new Player(this, this.width / 2 / this.scale, 0.5, 0.05, "white", 0.25, true));
         for (let i = 0; i < 6; i++)
-        this.players.push(new Player(this, this.width / 2, this.height / 2, this.height * 0.05, this.get_random_color(), this.height * 0.25, false));
+        this.players.push(new Player(this, this.width / 2 / this.scale, 0.5, 0.05, this.get_random_color(), 0.25, false));
     }
 
     hide() {  // 关闭playground界面

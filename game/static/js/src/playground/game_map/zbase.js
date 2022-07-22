@@ -17,6 +17,13 @@ class GameMap extends AcGameObject {
         this.render();
     }
 
+    resize() {
+        this.ctx.canvas.width = this.playground.width;
+        this.ctx.canvas.height = this.playground.height;
+        this.ctx.fillStyle = "rgba(0, 0, 0, 1)"; 
+        this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+    }
+
     render() { //该函数的作用是把画布画出来
         //this.ctx.drawImage("/static/image/menu/KaEr.jpg", 0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
         this.ctx.fillStyle = "rgba(0, 0, 0, 0.75)"; //设置为透明的黑色，这样移动会有残影

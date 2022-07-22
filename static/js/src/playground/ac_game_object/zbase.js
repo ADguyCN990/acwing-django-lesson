@@ -20,6 +20,12 @@ class AcGameObject {
 
     }
 
+    resize() {
+        this.ctx.canvas.width = this.playground.width;
+        this.ctx.canvas.height = this.playground.height;
+
+    }
+
     destroy() { //销毁物品
         this.on_destroy();
         for (let i = 0; i < AC_GAME_OBJECTS.length; i++) {
