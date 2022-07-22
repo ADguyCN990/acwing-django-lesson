@@ -1,5 +1,5 @@
 class Player extends AcGameObject {
-    constructor(playground, x, y, radius, color, speed, is_me) {
+    constructor(playground, x, y, radius, color, speed, character, username, photo) {
         super();
         this.x = x; //坐标
         this.y = y; //坐标
@@ -8,7 +8,7 @@ class Player extends AcGameObject {
         this.radius = radius; //半径
         this.color = color; //颜色
         this.speed = speed; //玩家移动速度
-        this.is_me = is_me; //敌我鉴定
+        this.character = character; //敌我鉴定
         this.eps = 0.01; //小于eps就认定为距离为0，因为涉及到浮点数运算
         this.vx = 0; //x方向上的移动速度
         this.vy = 0; //y方向上的移动速度 
@@ -22,17 +22,19 @@ class Player extends AcGameObject {
         this.fire_ball_cd = 5;
         this.ice_ball_cd = 5;
         this.thunder_ball_cd = 5;
+        this.username = username;
+        this.photo = photo
 
 
-        if (this.is_me) {
+        if (this.character == "me" || this.character == "enemy") {
             this.img = new Image();
-            this.img.src = this.playground.root.settings.photo;
+            this.img.src = this.photo;
         }
     }
 
     start() { //开始时执行
 
-        if (this.is_me) {
+        if (this.character == "me") {
             this.add_listenting_events(); //只能用鼠标键盘操控自身，也就是只对自身加一个监听函数
         }
         else {
@@ -155,8 +157,7 @@ class Player extends AcGameObject {
             let vx = Math.cos(angle), vy = Math.sin(angle);
             let color = this.color;
             let speed = this.speed * 7;
-            let move_length = this.radius * Math.random() * 200;
-            console.log("move_length:", move_length);
+            let move_length = this.radius * Math.random() * 175;
             new Particle(this.playground, x, y, radius, vx, vy, speed, color, move_length);
         }
         this.radius -= damage;
@@ -185,7 +186,7 @@ class Player extends AcGameObject {
         this.thunder_ball_cd = Math.max(0, this.thunder_ball_cd - this.timedelta / 1000);
 
         //AI随机放技能
-        if (Math.random() < 1 / 180 && !this.is_me) {
+        if (Math.random() < 1 / 180 && this.character == "robot") {
             let player = this.playground.players[0]; 
             let id = Math.floor(Math.random() * 3);
             if (id == 0) {
@@ -215,7 +216,7 @@ class Player extends AcGameObject {
                 this.vx = 0;
                 this.vy = 0;
                 this.move_length = 0;
-                if (!this.is_me) {
+                if (this.character == "robot") {
                     let tx = Math.random() * this.playground.width / this.playground.scale;
                     let ty = Math.random() * this.playground.height  / this.playground.scale;
                     this.move_to(tx, ty);
@@ -234,7 +235,7 @@ class Player extends AcGameObject {
 
     render() { //把玩家画出来，一个圆（直接抄的菜鸟教程）
         let scale = this.playground.scale;
-        if (this.is_me) {
+        if (this.character == "me" || this.character == "enemy") {
             this.ctx.save();
             this.ctx.beginPath();
             this.ctx.arc(this.x * scale, this.y * scale, this.radius * scale, 0, Math.PI * 2, false);

@@ -34,17 +34,25 @@ class AcGamePlayground {
         if (this.game_map) this.game_map.resize();
     }
 
-    show() {  // 打开playground界面
+    show(mode) {  // 打开playground界面
         this.$playground.show();
-        this.resize();
+        
         
         this.height = this.$playground.height();
         this.width = this.$playground.width();
         this.game_map = new GameMap(this); //创建一个地图
+        this.resize();
         this.players = []; //创建一个存储玩家信息的列表
-        this.players.push(new Player(this, this.width / 2 / this.scale, 0.5, 0.05, "white", 0.25, true));
-        for (let i = 0; i < 6; i++)
-        this.players.push(new Player(this, this.width / 2 / this.scale, 0.5, 0.05, this.get_random_color(), 0.25, false));
+        this.players.push(new Player(this, this.width / 2 / this.scale, 0.5, 0.05, "white", 0.25, "me", this.root.settings.username, this.root.settings.photo));
+        
+        if (mode == "single mode") {
+            for (let i = 0; i < 6; i++)
+            this.players.push(new Player(this, this.width / 2 / this.scale, 0.5, 0.05, this.get_random_color(), 0.25, "robot"));
+        }
+        else if (mode == "multi mode") {
+            this.mps = new MultiPlayerSocket(this);
+        }
+        
     }
 
     hide() {  // 关闭playground界面
