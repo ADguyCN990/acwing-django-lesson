@@ -31,6 +31,7 @@ ALLOWED_HOSTS = ["49.234.21.44", "app2796.acapp.acwing.com.cn"]
 # Application definition
 
 INSTALLED_APPS = [
+    'channels',
     'game.apps.GameConfig',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -51,6 +52,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'acapp.urls'
+ROOM_CAPACITY = 3 #联机对战最多支持三人
 
 TEMPLATES = [
     {
@@ -138,3 +140,13 @@ CACHES = {
     },  
 }
 USER_AGENTS_CACHE = 'default'
+
+ASGI_APPLICATION = 'acapp.asgi.application'
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}

@@ -1,6 +1,7 @@
 class Player extends AcGameObject {
     constructor(playground, x, y, radius, color, speed, character, username, photo) {
         super();
+        console.log(character); 
         this.x = x; //坐标
         this.y = y; //坐标
         this.playground = playground; //所属于playground
@@ -23,7 +24,7 @@ class Player extends AcGameObject {
         this.ice_ball_cd = 5;
         this.thunder_ball_cd = 5;
         this.username = username;
-        this.photo = photo
+        this.photo = photo;
 
 
         if (this.character == "me" || this.character == "enemy") {
@@ -37,7 +38,7 @@ class Player extends AcGameObject {
         if (this.character == "me") {
             this.add_listenting_events(); //只能用鼠标键盘操控自身，也就是只对自身加一个监听函数
         }
-        else {
+        else if (this.character == "robot") {
             let tx = Math.random() * this.playground.width / this.playground.scale;
             let ty = Math.random() * this.playground.height / this.playground.scale;
             this.move_to(tx, ty);
