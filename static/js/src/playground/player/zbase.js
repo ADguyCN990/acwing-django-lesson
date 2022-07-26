@@ -1,7 +1,6 @@
 class Player extends AcGameObject {
     constructor(playground, x, y, radius, color, speed, character, username, photo) {
         super();
-        console.log(character); 
         this.x = x; //坐标
         this.y = y; //坐标
         this.playground = playground; //所属于playground
@@ -20,11 +19,12 @@ class Player extends AcGameObject {
         this.is_alive = true; //是否存活
         this.move_length = 0; //移动到目标点的距离
         this.cur_skill = null; //当前有没有选择技能，默认无技能
-        this.fire_ball_cd = 5;
-        this.ice_ball_cd = 5;
-        this.thunder_ball_cd = 5;
+        //this.fire_ball_cd = 5;
+        //this.ice_ball_cd = 5;
+        //this.thunder_ball_cd = 5;
         this.username = username;
         this.photo = photo;
+        this.fireballs = [];
 
 
         if (this.character == "me" || this.character == "enemy") {
@@ -59,13 +59,15 @@ class Player extends AcGameObject {
             if (e.which == 3) { //右键移动
                 outer.move_to(tx, ty);
                 if (outer.playground.mode == "multi mode") {
-                    console.log("send_message");
                     outer.playground.mps.send_move_to(tx, ty);
                 }
             }
             else if (e.which == 1) { //左键释放技能
                 if (outer.cur_skill == "fireball") {
-                    outer.shoot_fireball((e.clientX - rect.left) / outer.playground.scale, (e.clientY - rect.top) / outer.playground.scale); //朝鼠标点击的位置释放一个火球
+                    let fireball = outer.shoot_fireball(tx, ty); //朝鼠标点击的位置释放一个火球
+                    if (outer.playground.mode == "multi mode") {
+                        outer.playground.mps.send_shootfireball(tx, ty, fireball.uuid);
+                    }
                 }
                 else if (outer.cur_skill == "iceball") {
                     outer.shoot_iceball((e.clientX - rect.left) / outer.playground.scale, (e.clientY - rect.top) / outer.playground.scale);
@@ -93,7 +95,7 @@ class Player extends AcGameObject {
 
     shoot_fireball(tx, ty) {
         //火球，能击退，射速适中，半径适中
-        if (this.fire_ball_cd > this.eps) return false;
+        //if (this.fire_ball_cd > this.eps) return false;
         let x = this.x, y = this.y;
         let radius = 0.01;
         let color = "orange";
@@ -102,15 +104,26 @@ class Player extends AcGameObject {
         let speed = 0.5;
         let move_length = 1;
         let damage = 0.01;
-        new FireBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
+        let fireball = new FireBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
+        this.fireballs.push(fireball);
+        //this.fire_ball_cd = 5;//设置cd
 
-        this.fire_ball_cd = 5;//设置cd
+        return fireball;
+    }
+
+    destroy_fireball(uuid) {
+        for (let i = 0; i < this.fireballs.size(); i++) {
+            let fireball = this.fireballs[i];
+            if (fireball.uuid == uuid) {
+                fireball.destroy();
+                break;
+            }
+        }
     }
 
     shoot_iceball(tx, ty) {
         //冰球，能减速，射速慢，半径大
-        if (this.ice_ball_cd > this.eps) return false;
-        if (this.ice_ball_cd > this.eps) return false;
+        //if (this.ice_ball_cd > this.eps) return false;
         let x = this.x, y = this.y;
         let radius = 0.02;
         let color = "skyblue";
@@ -120,13 +133,12 @@ class Player extends AcGameObject {
         let move_length = 1;
         let damage = 0.0075;
         new IceBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
-        this.ice_ball_cd = 5;//设置cd
+        //this.ice_ball_cd = 5;//设置cd
     }
 
     shoot_thunderball(tx, ty) {
         //雷球，能眩晕，射速快，半径小
-        if (this.thunder_ball_cd > this.eps) return false;
-        if (this.thunder_ball_cd > this.eps) return false;
+        //if (this.thunder_ball_cd > this.eps) return false;
         let x = this.x, y = this.y;
         let radius = 0.01;
         let color = "purple";
@@ -137,7 +149,7 @@ class Player extends AcGameObject {
         let damage = 0.005;
         new ThunderBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
 
-        this.thunder_ball_cd = 5;//设置cd
+        //this.thunder_ball_cd = 5;//设置cd
     }
 
     get_dis(x, y, tx, ty) {
@@ -187,9 +199,9 @@ class Player extends AcGameObject {
 
     update_move() { //负责更新玩家移动
         //减CD
-        this.fire_ball_cd = Math.max(0, this.fire_ball_cd - this.timedelta / 1000)
-        this.ice_ball_cd = Math.max(0, this.ice_ball_cd - this.timedelta / 1000);
-        this.thunder_ball_cd = Math.max(0, this.thunder_ball_cd - this.timedelta / 1000);
+        //this.fire_ball_cd = Math.max(0, this.fire_ball_cd - this.timedelta / 1000)
+        //this.ice_ball_cd = Math.max(0, this.ice_ball_cd - this.timedelta / 1000);
+        //this.thunder_ball_cd = Math.max(0, this.thunder_ball_cd - this.timedelta / 1000);
 
         //AI随机放技能
         if (Math.random() < 1 / 180 && this.character == "robot") {

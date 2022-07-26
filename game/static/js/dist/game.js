@@ -208,7 +208,6 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
 }class Player extends AcGameObject {
     constructor(playground, x, y, radius, color, speed, character, username, photo) {
         super();
-        console.log(character); 
         this.x = x; //坐标
         this.y = y; //坐标
         this.playground = playground; //所属于playground
@@ -227,11 +226,12 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         this.is_alive = true; //是否存活
         this.move_length = 0; //移动到目标点的距离
         this.cur_skill = null; //当前有没有选择技能，默认无技能
-        this.fire_ball_cd = 5;
-        this.ice_ball_cd = 5;
-        this.thunder_ball_cd = 5;
+        //this.fire_ball_cd = 5;
+        //this.ice_ball_cd = 5;
+        //this.thunder_ball_cd = 5;
         this.username = username;
         this.photo = photo;
+        this.fireballs = [];
 
 
         if (this.character == "me" || this.character == "enemy") {
@@ -266,13 +266,15 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
             if (e.which == 3) { //右键移动
                 outer.move_to(tx, ty);
                 if (outer.playground.mode == "multi mode") {
-                    console.log("send_message");
                     outer.playground.mps.send_move_to(tx, ty);
                 }
             }
             else if (e.which == 1) { //左键释放技能
                 if (outer.cur_skill == "fireball") {
-                    outer.shoot_fireball((e.clientX - rect.left) / outer.playground.scale, (e.clientY - rect.top) / outer.playground.scale); //朝鼠标点击的位置释放一个火球
+                    let fireball = outer.shoot_fireball(tx, ty); //朝鼠标点击的位置释放一个火球
+                    if (outer.playground.mode == "multi mode") {
+                        outer.playground.mps.send_shootfireball(tx, ty, fireball.uuid);
+                    }
                 }
                 else if (outer.cur_skill == "iceball") {
                     outer.shoot_iceball((e.clientX - rect.left) / outer.playground.scale, (e.clientY - rect.top) / outer.playground.scale);
@@ -300,7 +302,7 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
 
     shoot_fireball(tx, ty) {
         //火球，能击退，射速适中，半径适中
-        if (this.fire_ball_cd > this.eps) return false;
+        //if (this.fire_ball_cd > this.eps) return false;
         let x = this.x, y = this.y;
         let radius = 0.01;
         let color = "orange";
@@ -309,15 +311,26 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         let speed = 0.5;
         let move_length = 1;
         let damage = 0.01;
-        new FireBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
+        let fireball = new FireBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
+        this.fireballs.push(fireball);
+        //this.fire_ball_cd = 5;//设置cd
 
-        this.fire_ball_cd = 5;//设置cd
+        return fireball;
+    }
+
+    destroy_fireball(uuid) {
+        for (let i = 0; i < this.fireballs.size(); i++) {
+            let fireball = this.fireballs[i];
+            if (fireball.uuid == uuid) {
+                fireball.destroy();
+                break;
+            }
+        }
     }
 
     shoot_iceball(tx, ty) {
         //冰球，能减速，射速慢，半径大
-        if (this.ice_ball_cd > this.eps) return false;
-        if (this.ice_ball_cd > this.eps) return false;
+        //if (this.ice_ball_cd > this.eps) return false;
         let x = this.x, y = this.y;
         let radius = 0.02;
         let color = "skyblue";
@@ -327,13 +340,12 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         let move_length = 1;
         let damage = 0.0075;
         new IceBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
-        this.ice_ball_cd = 5;//设置cd
+        //this.ice_ball_cd = 5;//设置cd
     }
 
     shoot_thunderball(tx, ty) {
         //雷球，能眩晕，射速快，半径小
-        if (this.thunder_ball_cd > this.eps) return false;
-        if (this.thunder_ball_cd > this.eps) return false;
+        //if (this.thunder_ball_cd > this.eps) return false;
         let x = this.x, y = this.y;
         let radius = 0.01;
         let color = "purple";
@@ -344,7 +356,7 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         let damage = 0.005;
         new ThunderBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
 
-        this.thunder_ball_cd = 5;//设置cd
+        //this.thunder_ball_cd = 5;//设置cd
     }
 
     get_dis(x, y, tx, ty) {
@@ -394,9 +406,9 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
 
     update_move() { //负责更新玩家移动
         //减CD
-        this.fire_ball_cd = Math.max(0, this.fire_ball_cd - this.timedelta / 1000)
-        this.ice_ball_cd = Math.max(0, this.ice_ball_cd - this.timedelta / 1000);
-        this.thunder_ball_cd = Math.max(0, this.thunder_ball_cd - this.timedelta / 1000);
+        //this.fire_ball_cd = Math.max(0, this.fire_ball_cd - this.timedelta / 1000)
+        //this.ice_ball_cd = Math.max(0, this.ice_ball_cd - this.timedelta / 1000);
+        //this.thunder_ball_cd = Math.max(0, this.thunder_ball_cd - this.timedelta / 1000);
 
         //AI随机放技能
         if (Math.random() < 1 / 180 && this.character == "robot") {
@@ -487,6 +499,21 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
 
     }
 
+    update_move() {
+        let move_vector = Math.min(this.move_length, this.speed * this.timedelta / 1000);
+        this.x += move_vector * this.vx;
+        this.y += move_vector * this.vy;
+        this.move_length -= move_vector;
+    }
+    update_attack() {
+        for (let i = 0; i < this.playground.players.length; i++) {
+            let player = this.playground.players[i];
+            if (this.player != player && this.is_collision(player)) { //自己不会受到自己的攻击，另外火球碰到了另外的玩家
+                this.attack(player);
+            }
+        }
+    }
+
     update() {
         if (this.move_length < this.eps) {
             //如果火球到了射程范围外，则直接销毁
@@ -494,17 +521,9 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
             return false;
         }
         else {
-            let move_vector = Math.min(this.move_length, this.speed * this.timedelta / 1000);
-            this.x += move_vector * this.vx;
-            this.y += move_vector * this.vy;
-            this.move_length -= move_vector;
-
-            for (let i = 0; i < this.playground.players.length; i++) {
-                let player = this.playground.players[i];
-                if (this.player != player && this.is_collision(player)) { //自己不会受到自己的攻击，另外火球碰到了另外的玩家
-                    this.attack(player);
-                }
-            }
+            this.update_move();
+            this.update_attack();
+            
         }
         this.render();
     }
@@ -531,6 +550,17 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         }
         else {
             return false;
+        }
+    }
+
+    on_destroy() {
+        let fireballs = this.player.fireballs;
+        for (let i = 0; i < fireballs.length; i++) {
+            let fireball = fireballs[i];
+            if (this == fireball) {
+                fireballs.splice(i, 1);
+                break;
+            }
         }
     }
 
@@ -722,6 +752,9 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
             else if (event == "move_to") {
                 outer.receive_move_to(uuid, data.tx, data.ty);
             }
+            else if (event == "shoot_fireball") {
+                outer.receive_shootficeball(uuid, data.tx, data.ty, data.ball_uuid);
+            }
         };
     }
 
@@ -756,6 +789,17 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         }));
     }
 
+    send_shootfireball(tx, ty, ball_uuid) {
+        let outer = this;
+        this.ws.send(JSON.stringify({
+            'event': "shoot_fireball",
+            'uuid': outer.uuid,
+            'tx': tx,
+            'ty': ty,
+            'ball_uuid': ball_uuid,
+        }));
+    }
+
     receive_create_player(uuid, username, photo) {
         let player = new Player(
             this.playground,
@@ -777,6 +821,15 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
 
         if (player)
             player.move_to(tx, ty); //如果死了就没有必要调用了
+    }
+
+    receive_shootficeball(uuid, tx, ty, ball_uuid) {
+        let player = this.get_player(uuid);
+        if (player) {
+            let fireball = player.shoot_fireball(tx, ty);
+            fireball.uuid = ball_uuid; //所有窗口的火球id需要统一
+        }
+            
     }
 }class AcGamePlayground {
     constructor(root) {

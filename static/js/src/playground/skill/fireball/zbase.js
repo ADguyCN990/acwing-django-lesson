@@ -20,6 +20,21 @@ class FireBall extends AcGameObject {
 
     }
 
+    update_move() {
+        let move_vector = Math.min(this.move_length, this.speed * this.timedelta / 1000);
+        this.x += move_vector * this.vx;
+        this.y += move_vector * this.vy;
+        this.move_length -= move_vector;
+    }
+    update_attack() {
+        for (let i = 0; i < this.playground.players.length; i++) {
+            let player = this.playground.players[i];
+            if (this.player != player && this.is_collision(player)) { //自己不会受到自己的攻击，另外火球碰到了另外的玩家
+                this.attack(player);
+            }
+        }
+    }
+
     update() {
         if (this.move_length < this.eps) {
             //如果火球到了射程范围外，则直接销毁
@@ -27,17 +42,9 @@ class FireBall extends AcGameObject {
             return false;
         }
         else {
-            let move_vector = Math.min(this.move_length, this.speed * this.timedelta / 1000);
-            this.x += move_vector * this.vx;
-            this.y += move_vector * this.vy;
-            this.move_length -= move_vector;
-
-            for (let i = 0; i < this.playground.players.length; i++) {
-                let player = this.playground.players[i];
-                if (this.player != player && this.is_collision(player)) { //自己不会受到自己的攻击，另外火球碰到了另外的玩家
-                    this.attack(player);
-                }
-            }
+            this.update_move();
+            this.update_attack();
+            
         }
         this.render();
     }
@@ -64,6 +71,17 @@ class FireBall extends AcGameObject {
         }
         else {
             return false;
+        }
+    }
+
+    on_destroy() {
+        let fireballs = this.player.fireballs;
+        for (let i = 0; i < fireballs.length; i++) {
+            let fireball = fireballs[i];
+            if (this == fireball) {
+                fireballs.splice(i, 1);
+                break;
+            }
         }
     }
 
