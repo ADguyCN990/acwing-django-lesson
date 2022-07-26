@@ -25,6 +25,8 @@ class Player extends AcGameObject {
         this.username = username;
         this.photo = photo;
         this.fireballs = [];
+        this.iceballs = [];
+        this.thunderballs = [];
 
 
         if (this.character == "me" || this.character == "enemy") {
@@ -70,10 +72,16 @@ class Player extends AcGameObject {
                     }
                 }
                 else if (outer.cur_skill == "iceball") {
-                    outer.shoot_iceball((e.clientX - rect.left) / outer.playground.scale, (e.clientY - rect.top) / outer.playground.scale);
+                    let iceball = outer.shoot_iceball(tx, ty);
+                    if (outer.playground.mode == "multi mode") {
+                        outer.playground.mps.send_shooticeball(tx, ty, iceball.uuid);
+                    }
                 }
                 else if (outer.cur_skill == "thunderball") {
-                    outer.shoot_thunderball((e.clientX - rect.left) / outer.playground.scale, (e.clientY - rect.top) / outer.playground.scale);
+                    let thunderball = outer.shoot_thunderball(tx, ty);
+                    if (outer.playground.mode == "multi mode") {
+                        outer.playground.mps.send_shootthunderball(tx, ty, thunderball.uuid);
+                    }
                 }
                 outer.cur_skill = null;
             }
@@ -112,10 +120,30 @@ class Player extends AcGameObject {
     }
 
     destroy_fireball(uuid) {
-        for (let i = 0; i < this.fireballs.size(); i++) {
+        for (let i = 0; i < this.fireballs.length; i++) {
             let fireball = this.fireballs[i];
             if (fireball.uuid == uuid) {
                 fireball.destroy();
+                break;
+            }
+        }
+    }
+
+    destroy_iceball(uuid) {
+        for (let i = 0; i < this.iceballs.length; i++) {
+            let iceball = this.fireballs[i];
+            if (iceball.uuid == uuid) {
+                iceball.destroy();
+                break;
+            }
+        }
+    }
+
+    destroy_thunderball(uuid) {
+        for (let i = 0; i < this.thunderballs.length; i++) {
+            let thunderball = this.thunderballs[i];
+            if (thunderball.uuid == uuid) {
+                thunderball.destroy();
                 break;
             }
         }
@@ -132,8 +160,10 @@ class Player extends AcGameObject {
         let speed = 0.3;
         let move_length = 1;
         let damage = 0.0075;
-        new IceBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
+        let iceball = new IceBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
+        this.iceballs.push(iceball);
         //this.ice_ball_cd = 5;//设置cd
+        return iceball;
     }
 
     shoot_thunderball(tx, ty) {
@@ -147,9 +177,10 @@ class Player extends AcGameObject {
         let speed = 0.8;
         let move_length = 1;
         let damage = 0.005;
-        new ThunderBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
-
+        let thunderball = new ThunderBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
+        this.thunderballs.push(thunderball)
         //this.thunder_ball_cd = 5;//设置cd
+        return thunderball;
     }
 
     get_dis(x, y, tx, ty) {
@@ -180,6 +211,7 @@ class Player extends AcGameObject {
         }
         this.radius -= damage;
         if (this.radius < this.eps) {
+            this.is_alive = false;
             this.destroy();
             return false;
         }

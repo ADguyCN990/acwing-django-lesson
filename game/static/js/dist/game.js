@@ -232,6 +232,8 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         this.username = username;
         this.photo = photo;
         this.fireballs = [];
+        this.iceballs = [];
+        this.thunderballs = [];
 
 
         if (this.character == "me" || this.character == "enemy") {
@@ -277,10 +279,16 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
                     }
                 }
                 else if (outer.cur_skill == "iceball") {
-                    outer.shoot_iceball((e.clientX - rect.left) / outer.playground.scale, (e.clientY - rect.top) / outer.playground.scale);
+                    let iceball = outer.shoot_iceball(tx, ty);
+                    if (outer.playground.mode == "multi mode") {
+                        outer.playground.mps.send_shooticeball(tx, ty, iceball.uuid);
+                    }
                 }
                 else if (outer.cur_skill == "thunderball") {
-                    outer.shoot_thunderball((e.clientX - rect.left) / outer.playground.scale, (e.clientY - rect.top) / outer.playground.scale);
+                    let thunderball = outer.shoot_thunderball(tx, ty);
+                    if (outer.playground.mode == "multi mode") {
+                        outer.playground.mps.send_shootthunderball(tx, ty, thunderball.uuid);
+                    }
                 }
                 outer.cur_skill = null;
             }
@@ -319,10 +327,30 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
     }
 
     destroy_fireball(uuid) {
-        for (let i = 0; i < this.fireballs.size(); i++) {
+        for (let i = 0; i < this.fireballs.length; i++) {
             let fireball = this.fireballs[i];
             if (fireball.uuid == uuid) {
                 fireball.destroy();
+                break;
+            }
+        }
+    }
+
+    destroy_iceball(uuid) {
+        for (let i = 0; i < this.iceballs.length; i++) {
+            let iceball = this.fireballs[i];
+            if (iceball.uuid == uuid) {
+                iceball.destroy();
+                break;
+            }
+        }
+    }
+
+    destroy_thunderball(uuid) {
+        for (let i = 0; i < this.thunderballs.length; i++) {
+            let thunderball = this.thunderballs[i];
+            if (thunderball.uuid == uuid) {
+                thunderball.destroy();
                 break;
             }
         }
@@ -339,8 +367,10 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         let speed = 0.3;
         let move_length = 1;
         let damage = 0.0075;
-        new IceBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
+        let iceball = new IceBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
+        this.iceballs.push(iceball);
         //this.ice_ball_cd = 5;//设置cd
+        return iceball;
     }
 
     shoot_thunderball(tx, ty) {
@@ -354,9 +384,10 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         let speed = 0.8;
         let move_length = 1;
         let damage = 0.005;
-        new ThunderBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
-
+        let thunderball = new ThunderBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
+        this.thunderballs.push(thunderball)
         //this.thunder_ball_cd = 5;//设置cd
+        return thunderball;
     }
 
     get_dis(x, y, tx, ty) {
@@ -387,6 +418,7 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         }
         this.radius -= damage;
         if (this.radius < this.eps) {
+            this.is_alive = false;
             this.destroy();
             return false;
         }
@@ -641,6 +673,17 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         }
     }
 
+    on_destroy() {
+        let iceballs = this.player.iceballs;
+        for (let i = 0; i < iceballs.length; i++) {
+            let iceball = iceballs[i];
+            if (this == iceball) {
+                iceballs.splice(i, 1);
+                break;
+            }
+        }
+    }
+
     render() { //渲染火球
         let scale = this.playground.scale;
         this.ctx.beginPath();
@@ -707,6 +750,17 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         this.destroy();
     }
 
+    on_destroy() {
+        let thunderballs = this.player.thunderballs;
+        for (let i = 0; i < thunderballs.length; i++) {
+            let thunderball = thunderballs[i];
+            if (this == thunderball) {
+                thunderballs.splice(i, 1);
+                break;
+            }
+        }
+    }
+
     is_collision(player) { //检测火球与玩家是否碰撞
         let dis = this.get_dist(this.x, this.y, player.x, player.y);
         let safe = this.radius + player.radius;
@@ -753,7 +807,13 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
                 outer.receive_move_to(uuid, data.tx, data.ty);
             }
             else if (event == "shoot_fireball") {
-                outer.receive_shootficeball(uuid, data.tx, data.ty, data.ball_uuid);
+                outer.receive_shootfireball(uuid, data.tx, data.ty, data.ball_uuid);
+            }
+            else if (event == "shoot_iceball") {
+                outer.receive_shooticeball(uuid, data.tx, data.ty, data.ball_uuid);
+            }
+            else if (event == "shoot_thunderball") {
+                outer.receive_shootthunderball(uuid, data.tx, data.ty, data.ball_uuid);
             }
         };
     }
@@ -800,6 +860,30 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         }));
     }
 
+    send_shooticeball(tx, ty, ball_uuid) {
+        let outer = this;
+        this.ws.send(JSON.stringify({
+            'event': "shoot_iceball",
+            'uuid': outer.uuid,
+            'tx': tx,
+            'ty': ty,
+            'ball_uuid': ball_uuid,
+        }));
+    }
+
+    send_shootthunderball(tx, ty, ball_uuid) {
+        let outer = this;
+        this.ws.send(JSON.stringify({
+            'event': "shoot_thunderball",
+            'uuid': outer.uuid,
+            'tx': tx,
+            'ty': ty,
+            'ball_uuid': ball_uuid,
+        }));
+    }
+
+
+
     receive_create_player(uuid, username, photo) {
         let player = new Player(
             this.playground,
@@ -823,13 +907,29 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
             player.move_to(tx, ty); //如果死了就没有必要调用了
     }
 
-    receive_shootficeball(uuid, tx, ty, ball_uuid) {
+    receive_shootfireball(uuid, tx, ty, ball_uuid) {
         let player = this.get_player(uuid);
         if (player) {
             let fireball = player.shoot_fireball(tx, ty);
             fireball.uuid = ball_uuid; //所有窗口的火球id需要统一
         }
             
+    }
+
+    receive_shooticeball(uuid, tx, ty, ball_uuid) {
+        let player = this.get_player(uuid);
+        if (player) {
+            let iceball = player.shoot_iceball(tx, ty);
+            iceball.uuid = ball_uuid;
+        }
+    }
+
+    receive_shootthunderball(uuid, tx, ty, ball_uuid) {
+        let player = this.get_player(uuid);
+        if (player) {
+            let thunderball = player.shoot_thunderball(tx, ty);
+            thunderball.uuid = ball_uuid;
+        }
     }
 }class AcGamePlayground {
     constructor(root) {

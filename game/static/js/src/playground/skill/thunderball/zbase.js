@@ -56,6 +56,17 @@ class ThunderBall extends AcGameObject {
         this.destroy();
     }
 
+    on_destroy() {
+        let thunderballs = this.player.thunderballs;
+        for (let i = 0; i < thunderballs.length; i++) {
+            let thunderball = thunderballs[i];
+            if (this == thunderball) {
+                thunderballs.splice(i, 1);
+                break;
+            }
+        }
+    }
+
     is_collision(player) { //检测火球与玩家是否碰撞
         let dis = this.get_dist(this.x, this.y, player.x, player.y);
         let safe = this.radius + player.radius;

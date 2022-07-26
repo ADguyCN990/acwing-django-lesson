@@ -67,6 +67,17 @@ class IceBall extends AcGameObject {
         }
     }
 
+    on_destroy() {
+        let iceballs = this.player.iceballs;
+        for (let i = 0; i < iceballs.length; i++) {
+            let iceball = iceballs[i];
+            if (this == iceball) {
+                iceballs.splice(i, 1);
+                break;
+            }
+        }
+    }
+
     render() { //渲染火球
         let scale = this.playground.scale;
         this.ctx.beginPath();

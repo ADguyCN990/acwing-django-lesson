@@ -25,7 +25,13 @@ class MultiPlayerSocket {
                 outer.receive_move_to(uuid, data.tx, data.ty);
             }
             else if (event == "shoot_fireball") {
-                outer.receive_shootficeball(uuid, data.tx, data.ty, data.ball_uuid);
+                outer.receive_shootfireball(uuid, data.tx, data.ty, data.ball_uuid);
+            }
+            else if (event == "shoot_iceball") {
+                outer.receive_shooticeball(uuid, data.tx, data.ty, data.ball_uuid);
+            }
+            else if (event == "shoot_thunderball") {
+                outer.receive_shootthunderball(uuid, data.tx, data.ty, data.ball_uuid);
             }
         };
     }
@@ -72,6 +78,30 @@ class MultiPlayerSocket {
         }));
     }
 
+    send_shooticeball(tx, ty, ball_uuid) {
+        let outer = this;
+        this.ws.send(JSON.stringify({
+            'event': "shoot_iceball",
+            'uuid': outer.uuid,
+            'tx': tx,
+            'ty': ty,
+            'ball_uuid': ball_uuid,
+        }));
+    }
+
+    send_shootthunderball(tx, ty, ball_uuid) {
+        let outer = this;
+        this.ws.send(JSON.stringify({
+            'event': "shoot_thunderball",
+            'uuid': outer.uuid,
+            'tx': tx,
+            'ty': ty,
+            'ball_uuid': ball_uuid,
+        }));
+    }
+
+
+
     receive_create_player(uuid, username, photo) {
         let player = new Player(
             this.playground,
@@ -95,12 +125,28 @@ class MultiPlayerSocket {
             player.move_to(tx, ty); //如果死了就没有必要调用了
     }
 
-    receive_shootficeball(uuid, tx, ty, ball_uuid) {
+    receive_shootfireball(uuid, tx, ty, ball_uuid) {
         let player = this.get_player(uuid);
         if (player) {
             let fireball = player.shoot_fireball(tx, ty);
             fireball.uuid = ball_uuid; //所有窗口的火球id需要统一
         }
             
+    }
+
+    receive_shooticeball(uuid, tx, ty, ball_uuid) {
+        let player = this.get_player(uuid);
+        if (player) {
+            let iceball = player.shoot_iceball(tx, ty);
+            iceball.uuid = ball_uuid;
+        }
+    }
+
+    receive_shootthunderball(uuid, tx, ty, ball_uuid) {
+        let player = this.get_player(uuid);
+        if (player) {
+            let thunderball = player.shoot_thunderball(tx, ty);
+            thunderball.uuid = ball_uuid;
+        }
     }
 }
