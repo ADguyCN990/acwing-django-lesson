@@ -53,9 +53,15 @@ class Player extends AcGameObject {
 
         this.playground.game_map.$canvas.mousedown(function(e) { //鼠标监听
             const rect = outer.ctx.canvas.getBoundingClientRect();
+            let tx = (e.clientX - rect.left) / outer.playground.scale;
+            let ty = (e.clientY - rect.top) / outer.playground.scale;
             if (!outer.is_alive) return false;
             if (e.which == 3) { //右键移动
-                outer.move_to((e.clientX - rect.left) / outer.playground.scale, (e.clientY - rect.top) / outer.playground.scale);
+                outer.move_to(tx, ty);
+                if (outer.playground.mode == "multi mode") {
+                    console.log("send_message");
+                    outer.playground.mps.send_move_to(tx, ty);
+                }
             }
             else if (e.which == 1) { //左键释放技能
                 if (outer.cur_skill == "fireball") {
@@ -141,7 +147,6 @@ class Player extends AcGameObject {
     }
 
     move_to(tx, ty) { //从一个点到另一个点，需要求出距离，x，y方向上的速度
-        //console.log("move to: ", tx, ty);
         this.move_length = this.get_dis(this.x, this.y, tx, ty);
         let angle = Math.atan2(ty - this.y, tx - this.x);
         this.vx = Math.cos(angle);
@@ -225,7 +230,6 @@ class Player extends AcGameObject {
             }
             else {
                 let move_vector = Math.min(this.move_length, this.speed * this.timedelta / 1000); //向量的模长，和总距离取个较小值放置越界
-                //console.log(this.move_length);
                 this.x += move_vector * this.vx;
                 this.y += move_vector * this.vy;
                 this.move_length -= move_vector;

@@ -248,7 +248,9 @@ class Settings {
     }
 
     logout_on_remote() { //在远程服务器登出
-        if (this.platform == "ACAPP") return false;
+        if (this.platform == "ACAPP") {
+            this.root.AcWingOS.api.window.close();
+        }
 
         $.ajax({
             url: "https://app2796.acapp.acwing.com.cn/settings/logout/", 

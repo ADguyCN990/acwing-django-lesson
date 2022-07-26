@@ -38,7 +38,7 @@ class AcGamePlayground {
         let outer = this;
         this.$playground.show();
         
-        
+        this.mode = mode;
         this.height = this.$playground.height();
         this.width = this.$playground.width();
         this.game_map = new GameMap(this); //创建一个地图
@@ -53,7 +53,6 @@ class AcGamePlayground {
         else if (mode == "multi mode") {
             this.mps = new MultiPlayerSocket(this);
             this.mps.uuid = this.players[0].uuid;
-            console.log("me: " + this.mps.uuid);
             this.mps.ws.onopen = function() {
                 outer.mps.send_create_player(outer.root.settings.username, outer.root.settings.photo);
             };

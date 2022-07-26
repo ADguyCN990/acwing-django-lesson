@@ -68,7 +68,6 @@ class AcGameObject {
         this.had_called_start = false; //是否执行过start函数
         this.timedelta = 0; //当前距离上一帧的时间间隔
         this.uuid = this.create_uuid(); //唯一id
-        //console.log(this.uuid);
     }
 
     create_uuid() {
@@ -261,9 +260,15 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
 
         this.playground.game_map.$canvas.mousedown(function(e) { //鼠标监听
             const rect = outer.ctx.canvas.getBoundingClientRect();
+            let tx = (e.clientX - rect.left) / outer.playground.scale;
+            let ty = (e.clientY - rect.top) / outer.playground.scale;
             if (!outer.is_alive) return false;
             if (e.which == 3) { //右键移动
-                outer.move_to((e.clientX - rect.left) / outer.playground.scale, (e.clientY - rect.top) / outer.playground.scale);
+                outer.move_to(tx, ty);
+                if (outer.playground.mode == "multi mode") {
+                    console.log("send_message");
+                    outer.playground.mps.send_move_to(tx, ty);
+                }
             }
             else if (e.which == 1) { //左键释放技能
                 if (outer.cur_skill == "fireball") {
@@ -349,7 +354,6 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
     }
 
     move_to(tx, ty) { //从一个点到另一个点，需要求出距离，x，y方向上的速度
-        //console.log("move to: ", tx, ty);
         this.move_length = this.get_dis(this.x, this.y, tx, ty);
         let angle = Math.atan2(ty - this.y, tx - this.x);
         this.vx = Math.cos(angle);
@@ -433,7 +437,6 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
             }
             else {
                 let move_vector = Math.min(this.move_length, this.speed * this.timedelta / 1000); //向量的模长，和总距离取个较小值放置越界
-                //console.log(this.move_length);
                 this.x += move_vector * this.vx;
                 this.y += move_vector * this.vy;
                 this.move_length -= move_vector;
@@ -716,7 +719,21 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
             if (event == "create_player") {
                 outer.receive_create_player(uuid, data.username, data.photo);
             }
+            else if (event == "move_to") {
+                outer.receive_move_to(uuid, data.tx, data.ty);
+            }
         };
+    }
+
+    get_player(uuid) { //通过uuid找到对应的player
+        let players = this.playground.players;
+        for (let i = 0; i < players.length; i++) {
+            let player = players[i];
+            if (player.uuid == uuid) {
+                return player;
+            }
+        }
+        return null;
     }
 
     send_create_player(username, photo) {
@@ -726,6 +743,16 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
             'uuid': outer.uuid, 
             'username': username,
             'photo': photo,
+        }));
+    }
+
+    send_move_to(tx, ty) {
+        let outer = this;
+        this.ws.send(JSON.stringify({
+            'event': "move_to", 
+            'uuid': outer.uuid,
+            'tx': tx,
+            'ty': ty,
         }));
     }
 
@@ -743,6 +770,13 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         );
         player.uuid = uuid;
         this.playground.players.push(player);
+    }
+
+    receive_move_to(uuid, tx, ty) {
+        let player = this.get_player(uuid);
+
+        if (player)
+            player.move_to(tx, ty); //如果死了就没有必要调用了
     }
 }class AcGamePlayground {
     constructor(root) {
@@ -784,7 +818,7 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         let outer = this;
         this.$playground.show();
         
-        
+        this.mode = mode;
         this.height = this.$playground.height();
         this.width = this.$playground.width();
         this.game_map = new GameMap(this); //创建一个地图
@@ -799,7 +833,6 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         else if (mode == "multi mode") {
             this.mps = new MultiPlayerSocket(this);
             this.mps.uuid = this.players[0].uuid;
-            console.log("me: " + this.mps.uuid);
             this.mps.ws.onopen = function() {
                 outer.mps.send_create_player(outer.root.settings.username, outer.root.settings.photo);
             };
@@ -1062,7 +1095,9 @@ class Settings {
     }
 
     logout_on_remote() { //在远程服务器登出
-        if (this.platform == "ACAPP") return false;
+        if (this.platform == "ACAPP") {
+            this.root.AcWingOS.api.window.close();
+        }
 
         $.ajax({
             url: "https://app2796.acapp.acwing.com.cn/settings/logout/", 
