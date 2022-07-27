@@ -52,7 +52,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'acapp.urls'
-ROOM_CAPACITY = 3 #联机对战最多支持三人
+ROOM_CAPACITY = 2 #BO服
 
 TEMPLATES = [
     {

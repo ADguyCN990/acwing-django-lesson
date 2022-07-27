@@ -38,10 +38,13 @@ class AcGamePlayground {
         let outer = this;
         this.$playground.show();
         
+        this.state = "waiting" //状态机：waiting -> fighting -> over
         this.mode = mode;
         this.height = this.$playground.height();
         this.width = this.$playground.width();
+        this.player_cnt = 0; //玩家人数
         this.game_map = new GameMap(this); //创建一个地图
+        this.notice_board = new NoticeBoard(this);
         this.resize();
         this.players = []; //创建一个存储玩家信息的列表
         this.players.push(new Player(this, this.width / 2 / this.scale, 0.5, 0.05, "white", 0.25, "me", this.root.settings.username, this.root.settings.photo));

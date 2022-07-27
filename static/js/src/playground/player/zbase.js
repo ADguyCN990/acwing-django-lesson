@@ -19,6 +19,7 @@ class Player extends AcGameObject {
         this.is_alive = true; //是否存活
         this.move_length = 0; //移动到目标点的距离
         this.cur_skill = null; //当前有没有选择技能，默认无技能
+        this.spent_time = 0;
         //this.fire_ball_cd = 5;
         //this.ice_ball_cd = 5;
         //this.thunder_ball_cd = 5;
@@ -26,15 +27,31 @@ class Player extends AcGameObject {
         this.photo = photo;
         this.balls = [];
 
-
         if (this.character == "me" || this.character == "enemy") {
             this.img = new Image();
             this.img.src = this.photo;
         }
+
+        if (this.character == "me") {
+            this.fireball_cd = 5;
+            this.thunderball_cd = 5;
+            this.iceball_cd = 5;
+            this.fireball_img = new Image();
+            this.fireball_img.src = "https://adguycn990-typoraimage.oss-cn-hangzhou.aliyuncs.com/typora-img/202207271938643.png";
+            this.iceball_img = new Image();
+            this.iceball_img.src = "https://adguycn990-typoraimage.oss-cn-hangzhou.aliyuncs.com/typora-img/202207271938977.png";
+            this.thunderball_img = new Image();
+            this.thunderball_img.src = "https://adguycn990-typoraimage.oss-cn-hangzhou.aliyuncs.com/typora-img/202207271938023.png";
+        }     
     }
 
     start() { //开始时执行
-
+        this.playground.player_cnt++;
+        this.playground.notice_board.write("已就绪：" + this.playground.player_cnt + "人", "white");
+        if (this.playground.player_cnt >= 2) {
+            this.playground.state = "fighting";
+            this.playground.notice_board.write("Fighting!", "white");
+        }
         if (this.character == "me") {
             this.add_listenting_events(); //只能用鼠标键盘操控自身，也就是只对自身加一个监听函数
         }
@@ -50,8 +67,11 @@ class Player extends AcGameObject {
         this.playground.game_map.$canvas.on("contextmenu", function(){ //关闭鼠标右键弹出菜单
             return false;
         });
-
+        
         this.playground.game_map.$canvas.mousedown(function(e) { //鼠标监听
+            if (outer.playground.state != "fighting") {
+                return false;
+            }
             const rect = outer.ctx.canvas.getBoundingClientRect();
             let tx = (e.clientX - rect.left) / outer.playground.scale;
             let ty = (e.clientY - rect.top) / outer.playground.scale;
@@ -63,19 +83,19 @@ class Player extends AcGameObject {
                 }
             }
             else if (e.which == 1) { //左键释放技能
-                if (outer.cur_skill == "fireball") {
+                if (outer.cur_skill == "fireball" && outer.fireball_cd < outer.eps) {
                     let fireball = outer.shoot_fireball(tx, ty); //朝鼠标点击的位置释放一个火球
                     if (outer.playground.mode == "multi mode") {
                         outer.playground.mps.send_shootfireball(tx, ty, fireball.uuid);
                     }
                 }
-                else if (outer.cur_skill == "iceball") {
+                else if (outer.cur_skill == "iceball" && outer.iceball_cd < outer.eps) {
                     let iceball = outer.shoot_iceball(tx, ty);
                     if (outer.playground.mode == "multi mode") {
                         outer.playground.mps.send_shooticeball(tx, ty, iceball.uuid);
                     }
                 }
-                else if (outer.cur_skill == "thunderball") {
+                else if (outer.cur_skill == "thunderball" && outer.thunderball_cd < outer.eps) {
                     let thunderball = outer.shoot_thunderball(tx, ty);
                     if (outer.playground.mode == "multi mode") {
                         outer.playground.mps.send_shootthunderball(tx, ty, thunderball.uuid);
@@ -86,14 +106,16 @@ class Player extends AcGameObject {
         });
 
         $(window).keydown(function(e) {
-            if (e.which === 69) { //按下E，释放冰球技能
-                outer.cur_skill = "fireball";
+            if (outer.playground.state != "fighting") {
                 return false;
             }
-            else if (e.which == 81) { //按下Q，释放冰球技能
+            if (e.which === 69 && outer.fireball_cd < outer.eps && outer.playground.state == "fighting") { //按下E，释放冰球技能
+                outer.cur_skill = "fireball";
+            }
+            else if (e.which == 81 && outer.iceball_cd < outer.eps && outer.playground.state == "fighting") { //按下Q，释放冰球技能
                 outer.cur_skill = "iceball";
             }
-            else if (e.which == 87) { //按下W，释放雷球技能
+            else if (e.which == 87 && outer.thunderball_cd < outer.eps && outer.playground.state == "fighting") { //按下W，释放雷球技能
                 outer.cur_skill = "thunderball";
             }
         });
@@ -102,6 +124,7 @@ class Player extends AcGameObject {
     shoot_fireball(tx, ty) {
         //火球，能击退，射速适中，半径适中
         //if (this.fire_ball_cd > this.eps) return false;
+        if (!this.is_alive) return false;
         let x = this.x, y = this.y;
         let radius = 0.01;
         let color = "orange";
@@ -112,7 +135,7 @@ class Player extends AcGameObject {
         let damage = 0.01;
         let fireball = new FireBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
         this.balls.push(fireball);
-        //this.fire_ball_cd = 5;//设置cd
+        this.fireball_cd = 5;//设置cd
 
         return fireball;
     }
@@ -130,6 +153,7 @@ class Player extends AcGameObject {
     shoot_iceball(tx, ty) {
         //冰球，能减速，射速慢，半径大
         //if (this.ice_ball_cd > this.eps) return false;
+        if (!this.is_alive) return false;
         let x = this.x, y = this.y;
         let radius = 0.02;
         let color = "skyblue";
@@ -140,13 +164,14 @@ class Player extends AcGameObject {
         let damage = 0.0075;
         let iceball = new IceBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
         this.balls.push(iceball);
-        //this.ice_ball_cd = 5;//设置cd
+        this.iceball_cd = 5;//设置cd
         return iceball;
     }
 
     shoot_thunderball(tx, ty) {
         //雷球，能眩晕，射速快，半径小
         //if (this.thunder_ball_cd > this.eps) return false;
+        if (!this.is_alive) return false;
         let x = this.x, y = this.y;
         let radius = 0.01;
         let color = "purple";
@@ -157,7 +182,7 @@ class Player extends AcGameObject {
         let damage = 0.005;
         let thunderball = new ThunderBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
         this.balls.push(thunderball)
-        //this.thunder_ball_cd = 5;//设置cd
+        this.thunderball_cd = 5;//设置cd
         return thunderball;
     }
 
@@ -191,6 +216,10 @@ class Player extends AcGameObject {
         if (this.radius < this.eps) {
             this.is_alive = false;
             this.destroy();
+            if (this.character == "me") {
+                this.playground.state = "lose";
+                this.playground.notice_board.write("哥哥你这么菜你女朋友知道了不会生气吧", "red");
+            }
             return false;
         }
         this.damage_x = Math.cos(angle);
@@ -207,9 +236,21 @@ class Player extends AcGameObject {
     }
 
     update() { //除开始外的其他帧执行
-
+        this.spent_time += this.timedelta / 1000;
         this.update_move();
+        if (this.character == "me") {
+            this.update_cd();
+
+        }
+            
         this.render();
+    }
+
+
+    update_cd() {
+        this.fireball_cd = Math.max(0, this.fireball_cd - this.timedelta / 1000)
+        this.iceball_cd = Math.max(0, this.iceball_cd - this.timedelta / 1000);
+        this.thunderball_cd = Math.max(0, this.thunderball_cd - this.timedelta / 1000);
     }
 
     update_move() { //负责更新玩家移动
@@ -219,7 +260,7 @@ class Player extends AcGameObject {
         //this.thunder_ball_cd = Math.max(0, this.thunder_ball_cd - this.timedelta / 1000);
 
         //AI随机放技能
-        if (Math.random() < 1 / 180 && this.character == "robot") {
+        if (Math.random() < 1 / 300 && this.character == "robot" && this.spent_time > 5) {
             let player = this.playground.players[0]; 
             let id = Math.floor(Math.random() * 3);
             if (id == 0) {
@@ -282,7 +323,73 @@ class Player extends AcGameObject {
             this.ctx.fillStyle = this.color;
             this.ctx.fill();
         }
-        
+        if (this.character == "me" && this.playground.state == "fighting") {
+            this.render_fireball_cd();
+            this.render_iceball_cd();
+            this.render_thunderball_cd();
+        }
+    }
 
+    render_fireball_cd() {
+        let scale = this.playground.scale;
+        let x = 1.62, y = 0.9, r = 0.04;
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.ctx.arc(x * scale, y * scale, r * scale, 0, Math.PI * 2, false);
+        this.ctx.stroke();
+        this.ctx.clip();
+        this.ctx.drawImage(this.fireball_img, (x - r) * scale, (y - r) * scale, r * 2 * scale, r * 2 * scale); 
+        this.ctx.restore();
+
+        if (this.fireball_cd > 0) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(x * scale, y * scale);
+            this.ctx.arc(x * scale, y * scale, r * scale, 0 - Math.PI / 2, Math.PI * 2 * (1 - this.fireball_cd / 5) - Math.PI / 2, true);
+            this.ctx.lineTo(x * scale, y * scale);
+            this.ctx.fillStyle = "rgba(0, 0, 255, 0.6)";
+            this.ctx.fill();
+        }
+    }
+
+    render_iceball_cd() {
+        let scale = this.playground.scale;
+        let x = 1.38, y = 0.9, r = 0.04;
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.ctx.arc(x * scale, y * scale, r * scale, 0, Math.PI * 2, false);
+        this.ctx.stroke();
+        this.ctx.clip();
+        this.ctx.drawImage(this.iceball_img, (x - r) * scale, (y - r) * scale, r * 2 * scale, r * 2 * scale); 
+        this.ctx.restore();
+
+        if (this.iceball_cd > 0) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(x * scale, y * scale);
+            this.ctx.arc(x * scale, y * scale, r * scale, 0 - Math.PI / 2, Math.PI * 2 * (1 - this.iceball_cd / 5) - Math.PI / 2, true);
+            this.ctx.lineTo(x * scale, y * scale);
+            this.ctx.fillStyle = "rgba(0, 0, 255, 0.6)";
+            this.ctx.fill();
+        }
+    }
+
+    render_thunderball_cd() {
+        let scale = this.playground.scale;
+        let x = 1.5, y = 0.9, r = 0.04;
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.ctx.arc(x * scale, y * scale, r * scale, 0, Math.PI * 2, false);
+        this.ctx.stroke();
+        this.ctx.clip();
+        this.ctx.drawImage(this.thunderball_img, (x - r) * scale, (y - r) * scale, r * 2 * scale, r * 2 * scale); 
+        this.ctx.restore();
+
+        if (this.thunderball_cd > 0) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(x * scale, y * scale);
+            this.ctx.arc(x * scale, y * scale, r * scale, 0 - Math.PI / 2, Math.PI * 2 * (1 - this.thunderball_cd / 5) - Math.PI / 2, true);
+            this.ctx.lineTo(x * scale, y * scale);
+            this.ctx.fillStyle = "rgba(0, 0, 255, 0.6)";
+            this.ctx.fill();
+        }
     }
 }
