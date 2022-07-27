@@ -104,6 +104,24 @@ class MultiPlayer(AsyncWebsocketConsumer):
             }
         )
 
+    async def attack(self, data):
+        await self.channel_layer.group_send(
+            self.room_name,
+            {
+                'type': "group_send_event",
+                'event': "attack",
+                'uuid': data['uuid'],
+                'attackee_uuid': data['attackee_uuid'],
+                'x': data['x'],
+                'y': data['y'],
+                'angle': data['angle'],
+                'damage': data['damage'],
+                'damage_speed': data['damage_speed'],
+                'is_speed_up': data['is_speed_up'],
+                'ball_uuid': data['ball_uuid'],
+            }
+        )
+
     
 
     async def group_send_event(self, data):
@@ -123,5 +141,7 @@ class MultiPlayer(AsyncWebsocketConsumer):
             await self.shoot_iceball(data)
         elif event == "shoot_thunderball":
             await self.shoot_thunderball(data)
+        elif event == "attack":
+            await self.attack(data)
 
     

@@ -14,10 +14,28 @@ class ThunderBall extends AcGameObject {
         this.player = player; //发射火球的玩家
         this.move_length = move_length; //火球的射程
         this.damage = damage;
+        this.damage_speed = this.damage;
+        this.is_speed_up = 1;
     }
 
     start() {
 
+    }
+
+    update_move() {
+        let move_vector = Math.min(this.move_length, this.speed * this.timedelta / 1000);
+        this.x += move_vector * this.vx;
+        this.y += move_vector * this.vy;
+        this.move_length -= move_vector;
+    }
+
+    update_attack() {
+        for (let i = 0; i < this.playground.players.length; i++) {
+            let player = this.playground.players[i];
+            if (this.player != player && this.is_collision(player)) { //自己不会受到自己的攻击，另外火球碰到了另外的玩家
+                this.attack(player);
+            }
+        }
     }
 
     update() {
@@ -27,17 +45,11 @@ class ThunderBall extends AcGameObject {
             return false;
         }
         else {
-            let move_vector = Math.min(this.move_length, this.speed * this.timedelta / 1000);
-            this.x += move_vector * this.vx;
-            this.y += move_vector * this.vy;
-            this.move_length -= move_vector;
-
-            for (let i = 0; i < this.playground.players.length; i++) {
-                let player = this.playground.players[i];
-                if (this.player != player && this.is_collision(player)) { //自己不会受到自己的攻击，另外火球碰到了另外的玩家
-                    this.attack(player);
-                }
+            this.update_move();
+            if (this.player.character != "enemy") {
+                this.update_attack();
             }
+            
         }
         this.render();
     }
@@ -52,16 +64,22 @@ class ThunderBall extends AcGameObject {
         let angle = Math.atan2(player.y - this.y, player.x - this.x);
         //damage_speed决定了后退的距离，若足够小可以当做眩晕技能使用
         //is_speed_up决定了被击中的玩家在这之后的速度是多少
-        player.is_attacked(angle, this.damage, this.damage * 1, 1);
+        player.is_attacked(angle, this.damage, this.damage_speed, this.is_speed_up);
+
+        if (this.playground.mode == "multi mode") {
+            this.playground.mps.send_attack(player.uuid, player.x, player.y, angle, this.damage, this.damage_speed, this.is_speed_up, this.uuid);
+        }
+
+
         this.destroy();
     }
 
     on_destroy() {
-        let thunderballs = this.player.thunderballs;
-        for (let i = 0; i < thunderballs.length; i++) {
-            let thunderball = thunderballs[i];
-            if (this == thunderball) {
-                thunderballs.splice(i, 1);
+        let balls = this.player.balls;
+        for (let i = 0; i < balls.length; i++) {
+            let ball = balls[i];
+            if (this == ball) {
+                balls.splice(i, 1);
                 break;
             }
         }

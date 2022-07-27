@@ -33,6 +33,9 @@ class MultiPlayerSocket {
             else if (event == "shoot_thunderball") {
                 outer.receive_shootthunderball(uuid, data.tx, data.ty, data.ball_uuid);
             }
+            else if (event == "attack") {
+                outer.receive_attack(uuid, data.attackee_uuid, data.x, data.y, data.angle, data.damage, data.damage_speed, data.is_speed_up, data.ball_uuid);
+            }
         };
     }
 
@@ -100,6 +103,22 @@ class MultiPlayerSocket {
         }));
     }
 
+    send_attack(attackee_uuid, x, y, angle, damage, damage_speed, is_speed_up, ball_uuid) {
+        let outer = this;
+        this.ws.send(JSON.stringify({
+            'event': "attack", 
+            'uuid': outer.uuid, 
+            'attackee_uuid': attackee_uuid,
+            'x': x,
+            'y': y,
+            'angle': angle,
+            'damage': damage,
+            'damage_speed': damage_speed,
+            'is_speed_up': is_speed_up,
+            'ball_uuid': ball_uuid,
+        }))
+    }
+
 
 
     receive_create_player(uuid, username, photo) {
@@ -147,6 +166,14 @@ class MultiPlayerSocket {
         if (player) {
             let thunderball = player.shoot_thunderball(tx, ty);
             thunderball.uuid = ball_uuid;
+        }
+    }
+
+    receive_attack(uuid, attackee_uuid, x, y, angle, damage, damage_speed, is_speed_up, ball_uuid) {
+        let attacker = this.get_player(uuid);
+        let attackee = this.get_player(attackee_uuid);
+        if (attackee.is_alive && attacker.is_alive) {
+            attackee.receive_attack(x, y, angle, damage, damage_speed, is_speed_up, ball_uuid, attacker);
         }
     }
 }

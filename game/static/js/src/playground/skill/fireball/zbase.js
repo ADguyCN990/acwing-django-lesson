@@ -14,6 +14,8 @@ class FireBall extends AcGameObject {
         this.player = player; //发射火球的玩家
         this.move_length = move_length; //火球的射程
         this.damage = damage;
+        this.damage_speed = this.damage * 100;
+        this.is_speed_up = 1.1;
     }
 
     start() {
@@ -43,7 +45,10 @@ class FireBall extends AcGameObject {
         }
         else {
             this.update_move();
-            this.update_attack();
+            if (this.player.character != "enemy") {
+                this.update_attack();
+            }
+            
             
         }
         this.render();
@@ -59,7 +64,12 @@ class FireBall extends AcGameObject {
         let angle = Math.atan2(player.y - this.y, player.x - this.x);
         //damage_speed决定了后退的距离，若足够小可以当做眩晕技能使用
         //is_speed_up决定了被击中的玩家在这之后的速度是多少
-        player.is_attacked(angle, this.damage, this.damage * 100, 1.1);
+        player.is_attacked(angle, this.damage, this.damage_speed, this.is_speed_up);
+
+        if (this.playground.mode == "multi mode") {
+            this.playground.mps.send_attack(player.uuid, player.x, player.y, angle, this.damage, this.damage_speed, this.is_speed_up, this.uuid);
+        }
+
         this.destroy();
     }
 
@@ -75,11 +85,11 @@ class FireBall extends AcGameObject {
     }
 
     on_destroy() {
-        let fireballs = this.player.fireballs;
-        for (let i = 0; i < fireballs.length; i++) {
-            let fireball = fireballs[i];
-            if (this == fireball) {
-                fireballs.splice(i, 1);
+        let balls = this.player.balls;
+        for (let i = 0; i < balls.length; i++) {
+            let ball = balls[i];
+            if (this == ball) {
+                balls.splice(i, 1);
                 break;
             }
         }

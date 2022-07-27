@@ -231,9 +231,7 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         //this.thunder_ball_cd = 5;
         this.username = username;
         this.photo = photo;
-        this.fireballs = [];
-        this.iceballs = [];
-        this.thunderballs = [];
+        this.balls = [];
 
 
         if (this.character == "me" || this.character == "enemy") {
@@ -320,37 +318,17 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         let move_length = 1;
         let damage = 0.01;
         let fireball = new FireBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
-        this.fireballs.push(fireball);
+        this.balls.push(fireball);
         //this.fire_ball_cd = 5;//设置cd
 
         return fireball;
     }
 
-    destroy_fireball(uuid) {
-        for (let i = 0; i < this.fireballs.length; i++) {
-            let fireball = this.fireballs[i];
-            if (fireball.uuid == uuid) {
-                fireball.destroy();
-                break;
-            }
-        }
-    }
-
-    destroy_iceball(uuid) {
-        for (let i = 0; i < this.iceballs.length; i++) {
-            let iceball = this.fireballs[i];
-            if (iceball.uuid == uuid) {
-                iceball.destroy();
-                break;
-            }
-        }
-    }
-
-    destroy_thunderball(uuid) {
-        for (let i = 0; i < this.thunderballs.length; i++) {
-            let thunderball = this.thunderballs[i];
-            if (thunderball.uuid == uuid) {
-                thunderball.destroy();
+    destroy_ball(uuid) {
+        for (let i = 0; i < this.balls.length; i++) {
+            let ball = this.balls[i];
+            if (ball.uuid == uuid) {
+                ball.destroy();
                 break;
             }
         }
@@ -368,7 +346,7 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         let move_length = 1;
         let damage = 0.0075;
         let iceball = new IceBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
-        this.iceballs.push(iceball);
+        this.balls.push(iceball);
         //this.ice_ball_cd = 5;//设置cd
         return iceball;
     }
@@ -385,7 +363,7 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         let move_length = 1;
         let damage = 0.005;
         let thunderball = new ThunderBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
-        this.thunderballs.push(thunderball)
+        this.balls.push(thunderball)
         //this.thunder_ball_cd = 5;//设置cd
         return thunderball;
     }
@@ -426,8 +404,13 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         this.damage_y = Math.sin(angle);
         this.damage_speed = damage_speed;
         this.speed *= is_speed_up;
+    }
 
-        
+    receive_attack(x, y, angle, damage, damage_speed, is_speed_up, ball_uuid, attacker) {
+        this.x = x;
+        this.y = y;
+        attacker.destroy_ball(ball_uuid);
+        this.is_attacked(angle, damage, damage_speed, is_speed_up);
     }
 
     update() { //除开始外的其他帧执行
@@ -525,6 +508,8 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         this.player = player; //发射火球的玩家
         this.move_length = move_length; //火球的射程
         this.damage = damage;
+        this.damage_speed = this.damage * 100;
+        this.is_speed_up = 1.1;
     }
 
     start() {
@@ -554,7 +539,10 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         }
         else {
             this.update_move();
-            this.update_attack();
+            if (this.player.character != "enemy") {
+                this.update_attack();
+            }
+            
             
         }
         this.render();
@@ -570,7 +558,12 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         let angle = Math.atan2(player.y - this.y, player.x - this.x);
         //damage_speed决定了后退的距离，若足够小可以当做眩晕技能使用
         //is_speed_up决定了被击中的玩家在这之后的速度是多少
-        player.is_attacked(angle, this.damage, this.damage * 100, 1.1);
+        player.is_attacked(angle, this.damage, this.damage_speed, this.is_speed_up);
+
+        if (this.playground.mode == "multi mode") {
+            this.playground.mps.send_attack(player.uuid, player.x, player.y, angle, this.damage, this.damage_speed, this.is_speed_up, this.uuid);
+        }
+
         this.destroy();
     }
 
@@ -586,11 +579,11 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
     }
 
     on_destroy() {
-        let fireballs = this.player.fireballs;
-        for (let i = 0; i < fireballs.length; i++) {
-            let fireball = fireballs[i];
-            if (this == fireball) {
-                fireballs.splice(i, 1);
+        let balls = this.player.balls;
+        for (let i = 0; i < balls.length; i++) {
+            let ball = balls[i];
+            if (this == ball) {
+                balls.splice(i, 1);
                 break;
             }
         }
@@ -620,10 +613,28 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         this.player = player; //发射火球的玩家
         this.move_length = move_length; //火球的射程
         this.damage = damage;
+        this.damage_speed = this.damage * 200;
+        this.is_speed_up = 0.75;
     }
 
     start() {
 
+    }
+
+    update_move() {
+        let move_vector = Math.min(this.move_length, this.speed * this.timedelta / 1000);
+        this.x += move_vector * this.vx;
+        this.y += move_vector * this.vy;
+        this.move_length -= move_vector;
+    }
+
+    update_attack() {
+        for (let i = 0; i < this.playground.players.length; i++) {
+            let player = this.playground.players[i];
+            if (this.player != player && this.is_collision(player)) { //自己不会受到自己的攻击，另外火球碰到了另外的玩家
+                this.attack(player);
+            }
+        }
     }
 
     update() {
@@ -633,17 +644,10 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
             return false;
         }
         else {
-            let move_vector = Math.min(this.move_length, this.speed * this.timedelta / 1000);
-            this.x += move_vector * this.vx;
-            this.y += move_vector * this.vy;
-            this.move_length -= move_vector;
-
-            for (let i = 0; i < this.playground.players.length; i++) {
-                let player = this.playground.players[i];
-                if (this.player != player && this.is_collision(player)) { //自己不会受到自己的攻击，另外火球碰到了另外的玩家
-                    this.attack(player);
-                }
-            }
+            this.update_move();
+            if (this.player.character != "enemy") {
+                this.update_attack();
+            }            
         }
         this.render();
     }
@@ -658,7 +662,12 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         let angle = Math.atan2(player.y - this.y, player.x - this.x);
         //damage_speed决定了后退的距离，若足够小可以当做眩晕技能使用
         //is_speed_up决定了被击中的玩家在这之后的速度是多少
-        player.is_attacked(angle, this.damage, this.damage * 200, 0.75);
+        player.is_attacked(angle, this.damage, this.damage_speed, this.is_speed_up);
+
+        if (this.playground.mode == "multi mode") {
+            this.playground.mps.send_attack(player.uuid, player.x, player.y, angle, this.damage, this.damage_speed, this.is_speed_up, this.uuid);
+        }
+
         this.destroy();
     }
 
@@ -674,11 +683,11 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
     }
 
     on_destroy() {
-        let iceballs = this.player.iceballs;
-        for (let i = 0; i < iceballs.length; i++) {
-            let iceball = iceballs[i];
-            if (this == iceball) {
-                iceballs.splice(i, 1);
+        let balls = this.player.balls;
+        for (let i = 0; i < balls.length; i++) {
+            let ball = balls[i];
+            if (this == ball) {
+                balls.splice(i, 1);
                 break;
             }
         }
@@ -708,10 +717,28 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         this.player = player; //发射火球的玩家
         this.move_length = move_length; //火球的射程
         this.damage = damage;
+        this.damage_speed = this.damage;
+        this.is_speed_up = 1;
     }
 
     start() {
 
+    }
+
+    update_move() {
+        let move_vector = Math.min(this.move_length, this.speed * this.timedelta / 1000);
+        this.x += move_vector * this.vx;
+        this.y += move_vector * this.vy;
+        this.move_length -= move_vector;
+    }
+
+    update_attack() {
+        for (let i = 0; i < this.playground.players.length; i++) {
+            let player = this.playground.players[i];
+            if (this.player != player && this.is_collision(player)) { //自己不会受到自己的攻击，另外火球碰到了另外的玩家
+                this.attack(player);
+            }
+        }
     }
 
     update() {
@@ -721,17 +748,11 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
             return false;
         }
         else {
-            let move_vector = Math.min(this.move_length, this.speed * this.timedelta / 1000);
-            this.x += move_vector * this.vx;
-            this.y += move_vector * this.vy;
-            this.move_length -= move_vector;
-
-            for (let i = 0; i < this.playground.players.length; i++) {
-                let player = this.playground.players[i];
-                if (this.player != player && this.is_collision(player)) { //自己不会受到自己的攻击，另外火球碰到了另外的玩家
-                    this.attack(player);
-                }
+            this.update_move();
+            if (this.player.character != "enemy") {
+                this.update_attack();
             }
+            
         }
         this.render();
     }
@@ -746,16 +767,22 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         let angle = Math.atan2(player.y - this.y, player.x - this.x);
         //damage_speed决定了后退的距离，若足够小可以当做眩晕技能使用
         //is_speed_up决定了被击中的玩家在这之后的速度是多少
-        player.is_attacked(angle, this.damage, this.damage * 1, 1);
+        player.is_attacked(angle, this.damage, this.damage_speed, this.is_speed_up);
+
+        if (this.playground.mode == "multi mode") {
+            this.playground.mps.send_attack(player.uuid, player.x, player.y, angle, this.damage, this.damage_speed, this.is_speed_up, this.uuid);
+        }
+
+
         this.destroy();
     }
 
     on_destroy() {
-        let thunderballs = this.player.thunderballs;
-        for (let i = 0; i < thunderballs.length; i++) {
-            let thunderball = thunderballs[i];
-            if (this == thunderball) {
-                thunderballs.splice(i, 1);
+        let balls = this.player.balls;
+        for (let i = 0; i < balls.length; i++) {
+            let ball = balls[i];
+            if (this == ball) {
+                balls.splice(i, 1);
                 break;
             }
         }
@@ -814,6 +841,9 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
             }
             else if (event == "shoot_thunderball") {
                 outer.receive_shootthunderball(uuid, data.tx, data.ty, data.ball_uuid);
+            }
+            else if (event == "attack") {
+                outer.receive_attack(uuid, data.attackee_uuid, data.x, data.y, data.angle, data.damage, data.damage_speed, data.is_speed_up, data.ball_uuid);
             }
         };
     }
@@ -882,6 +912,22 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         }));
     }
 
+    send_attack(attackee_uuid, x, y, angle, damage, damage_speed, is_speed_up, ball_uuid) {
+        let outer = this;
+        this.ws.send(JSON.stringify({
+            'event': "attack", 
+            'uuid': outer.uuid, 
+            'attackee_uuid': attackee_uuid,
+            'x': x,
+            'y': y,
+            'angle': angle,
+            'damage': damage,
+            'damage_speed': damage_speed,
+            'is_speed_up': is_speed_up,
+            'ball_uuid': ball_uuid,
+        }))
+    }
+
 
 
     receive_create_player(uuid, username, photo) {
@@ -929,6 +975,14 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         if (player) {
             let thunderball = player.shoot_thunderball(tx, ty);
             thunderball.uuid = ball_uuid;
+        }
+    }
+
+    receive_attack(uuid, attackee_uuid, x, y, angle, damage, damage_speed, is_speed_up, ball_uuid) {
+        let attacker = this.get_player(uuid);
+        let attackee = this.get_player(attackee_uuid);
+        if (attackee.is_alive && attacker.is_alive) {
+            attackee.receive_attack(x, y, angle, damage, damage_speed, is_speed_up, ball_uuid, attacker);
         }
     }
 }class AcGamePlayground {

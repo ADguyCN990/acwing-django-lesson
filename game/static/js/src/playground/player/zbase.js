@@ -24,9 +24,7 @@ class Player extends AcGameObject {
         //this.thunder_ball_cd = 5;
         this.username = username;
         this.photo = photo;
-        this.fireballs = [];
-        this.iceballs = [];
-        this.thunderballs = [];
+        this.balls = [];
 
 
         if (this.character == "me" || this.character == "enemy") {
@@ -113,37 +111,17 @@ class Player extends AcGameObject {
         let move_length = 1;
         let damage = 0.01;
         let fireball = new FireBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
-        this.fireballs.push(fireball);
+        this.balls.push(fireball);
         //this.fire_ball_cd = 5;//设置cd
 
         return fireball;
     }
 
-    destroy_fireball(uuid) {
-        for (let i = 0; i < this.fireballs.length; i++) {
-            let fireball = this.fireballs[i];
-            if (fireball.uuid == uuid) {
-                fireball.destroy();
-                break;
-            }
-        }
-    }
-
-    destroy_iceball(uuid) {
-        for (let i = 0; i < this.iceballs.length; i++) {
-            let iceball = this.fireballs[i];
-            if (iceball.uuid == uuid) {
-                iceball.destroy();
-                break;
-            }
-        }
-    }
-
-    destroy_thunderball(uuid) {
-        for (let i = 0; i < this.thunderballs.length; i++) {
-            let thunderball = this.thunderballs[i];
-            if (thunderball.uuid == uuid) {
-                thunderball.destroy();
+    destroy_ball(uuid) {
+        for (let i = 0; i < this.balls.length; i++) {
+            let ball = this.balls[i];
+            if (ball.uuid == uuid) {
+                ball.destroy();
                 break;
             }
         }
@@ -161,7 +139,7 @@ class Player extends AcGameObject {
         let move_length = 1;
         let damage = 0.0075;
         let iceball = new IceBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
-        this.iceballs.push(iceball);
+        this.balls.push(iceball);
         //this.ice_ball_cd = 5;//设置cd
         return iceball;
     }
@@ -178,7 +156,7 @@ class Player extends AcGameObject {
         let move_length = 1;
         let damage = 0.005;
         let thunderball = new ThunderBall(this.playground, x, y, vx, vy, radius, color, speed, this, move_length, damage);
-        this.thunderballs.push(thunderball)
+        this.balls.push(thunderball)
         //this.thunder_ball_cd = 5;//设置cd
         return thunderball;
     }
@@ -219,8 +197,13 @@ class Player extends AcGameObject {
         this.damage_y = Math.sin(angle);
         this.damage_speed = damage_speed;
         this.speed *= is_speed_up;
+    }
 
-        
+    receive_attack(x, y, angle, damage, damage_speed, is_speed_up, ball_uuid, attacker) {
+        this.x = x;
+        this.y = y;
+        attacker.destroy_ball(ball_uuid);
+        this.is_attacked(angle, damage, damage_speed, is_speed_up);
     }
 
     update() { //除开始外的其他帧执行
