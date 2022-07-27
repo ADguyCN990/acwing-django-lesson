@@ -134,7 +134,7 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
     constructor(playground) {
         super();
         this.playground = playground; //这个“MAP"是属于playground的
-        this.$canvas = $(`<canvas> </canvas>`) //canvas是画布
+        this.$canvas = $(`<canvas tabindex=0> </canvas>`) //canvas是画布
         this.ctx = this.$canvas[0].getContext("2d"); //用ctx参数操作画布canvas
         this.ctx.canvas.width = this.playground.width; //画布宽度
         this.ctx.canvas.height = this.playground.height; //画布高度
@@ -142,6 +142,7 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
     }
 
     start() {
+        this.$canvas.focus();
 
     }
 
@@ -179,9 +180,8 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         this.render();
     }
 
-    write(text, color) { //更新board信息
+    write(text) { //更新board信息
         this.text = text;
-        this.ctx.fiilStyle = color;
     }
 
     render() {
@@ -282,10 +282,10 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
 
     start() { //开始时执行
         this.playground.player_cnt++;
-        this.playground.notice_board.write("已就绪：" + this.playground.player_cnt + "人", "white");
+        this.playground.notice_board.write("已就绪：" + this.playground.player_cnt + "人");
         if (this.playground.player_cnt >= 2) {
             this.playground.state = "fighting";
-            this.playground.notice_board.write("Fighting!", "white");
+            this.playground.notice_board.write("Fighting!");
         }
         if (this.character == "me") {
             this.add_listenting_events(); //只能用鼠标键盘操控自身，也就是只对自身加一个监听函数
@@ -340,7 +340,7 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
             }
         });
 
-        $(window).keydown(function(e) {
+        this.playground.game_map.$canvas.keydown(function(e) {
             if (outer.playground.state != "fighting") {
                 return false;
             }
@@ -453,7 +453,7 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
             this.destroy();
             if (this.character == "me") {
                 this.playground.state = "lose";
-                this.playground.notice_board.write("哥哥你这么菜你女朋友知道了不会生气吧", "red");
+                this.playground.notice_board.write("哥哥你这么菜你女朋友知道了不会生气吧");
             }
             return false;
         }
@@ -473,7 +473,7 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
     update() { //除开始外的其他帧执行
         this.spent_time += this.timedelta / 1000;
         this.update_move();
-        if (this.character == "me") {
+        if (this.character == "me" && this.playground.state == "fighting") {
             this.update_cd();
 
         }

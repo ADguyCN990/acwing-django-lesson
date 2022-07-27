@@ -15,9 +15,8 @@ class NoticeBoard extends AcGameObject{
         this.render();
     }
 
-    write(text, color) { //更新board信息
+    write(text) { //更新board信息
         this.text = text;
-        this.ctx.fiilStyle = color;
     }
 
     render() {

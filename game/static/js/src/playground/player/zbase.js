@@ -105,7 +105,7 @@ class Player extends AcGameObject {
             }
         });
 
-        $(window).keydown(function(e) {
+        this.playground.game_map.$canvas.keydown(function(e) {
             if (outer.playground.state != "fighting") {
                 return false;
             }
@@ -238,7 +238,7 @@ class Player extends AcGameObject {
     update() { //除开始外的其他帧执行
         this.spent_time += this.timedelta / 1000;
         this.update_move();
-        if (this.character == "me") {
+        if (this.character == "me" && this.playground.state == "fighting") {
             this.update_cd();
 
         }

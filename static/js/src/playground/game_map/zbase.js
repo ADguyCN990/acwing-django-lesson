@@ -2,7 +2,7 @@ class GameMap extends AcGameObject {
     constructor(playground) {
         super();
         this.playground = playground; //这个“MAP"是属于playground的
-        this.$canvas = $(`<canvas> </canvas>`) //canvas是画布
+        this.$canvas = $(`<canvas tabindex=0> </canvas>`) //canvas是画布
         this.ctx = this.$canvas[0].getContext("2d"); //用ctx参数操作画布canvas
         this.ctx.canvas.width = this.playground.width; //画布宽度
         this.ctx.canvas.height = this.playground.height; //画布高度
@@ -10,6 +10,7 @@ class GameMap extends AcGameObject {
     }
 
     start() {
+        this.$canvas.focus();
 
     }
 

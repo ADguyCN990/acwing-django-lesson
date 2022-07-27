@@ -47,10 +47,10 @@ class Player extends AcGameObject {
 
     start() { //开始时执行
         this.playground.player_cnt++;
-        this.playground.notice_board.write("已就绪：" + this.playground.player_cnt + "人", "white");
+        this.playground.notice_board.write("已就绪：" + this.playground.player_cnt + "人");
         if (this.playground.player_cnt >= 2) {
             this.playground.state = "fighting";
-            this.playground.notice_board.write("Fighting!", "white");
+            this.playground.notice_board.write("Fighting!");
         }
         if (this.character == "me") {
             this.add_listenting_events(); //只能用鼠标键盘操控自身，也就是只对自身加一个监听函数
@@ -105,7 +105,7 @@ class Player extends AcGameObject {
             }
         });
 
-        $(window).keydown(function(e) {
+        this.playground.game_map.$canvas.keydown(function(e) {
             if (outer.playground.state != "fighting") {
                 return false;
             }
@@ -218,7 +218,7 @@ class Player extends AcGameObject {
             this.destroy();
             if (this.character == "me") {
                 this.playground.state = "lose";
-                this.playground.notice_board.write("哥哥你这么菜你女朋友知道了不会生气吧", "red");
+                this.playground.notice_board.write("哥哥你这么菜你女朋友知道了不会生气吧");
             }
             return false;
         }
@@ -238,7 +238,7 @@ class Player extends AcGameObject {
     update() { //除开始外的其他帧执行
         this.spent_time += this.timedelta / 1000;
         this.update_move();
-        if (this.character == "me") {
+        if (this.character == "me" && this.playground.state == "fighting") {
             this.update_cd();
 
         }
