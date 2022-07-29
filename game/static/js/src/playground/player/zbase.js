@@ -70,7 +70,7 @@ class Player extends AcGameObject {
         
         this.playground.game_map.$canvas.mousedown(function(e) { //鼠标监听
             if (outer.playground.state != "fighting") {
-                return false;
+                return true;
             }
             const rect = outer.ctx.canvas.getBoundingClientRect();
             let tx = (e.clientX - rect.left) / outer.playground.scale;
@@ -106,10 +106,18 @@ class Player extends AcGameObject {
         });
 
         this.playground.game_map.$canvas.keydown(function(e) {
-            if (outer.playground.state != "fighting") {
-                return false;
+            if (e.which == 13) { //回车键打开聊天框
+                if (outer.playground.mode == "multi mode") {
+                    outer.playground.chat_field.show_input();
+                    return false;
+                }
             }
-            if (e.which === 69 && outer.fireball_cd < outer.eps && outer.playground.state == "fighting") { //按下E，释放冰球技能
+            else if (e.which == 27) { //ESC键退出聊天框
+                if (outer.playground.mode == "multi mode") {
+                    outer.playground.chat_field.hide_input();
+                }
+            }
+            else if (e.which === 69 && outer.fireball_cd < outer.eps && outer.playground.state == "fighting") { //按下E，释放冰球技能
                 outer.cur_skill = "fireball";
             }
             else if (e.which == 81 && outer.iceball_cd < outer.eps && outer.playground.state == "fighting") { //按下Q，释放冰球技能

@@ -130,7 +130,87 @@ let AC_GAME_ANIMATION = function(timestamp) { //实现每个帧内的操作，�
     requestAnimationFrame(AC_GAME_ANIMATION); //在每一帧快结束后递归调用该函数，实现循环
 }
 
-requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
+requestAnimationFrame(AC_GAME_ANIMATION); class ChatField {
+    constructor(playground) {
+        this.playground = playground;
+
+        this.$history = $(`<div class="ac-game-chat-field-history"></div>`);
+        this.$input = $(`<input class="ac-game-chat-field-input"></input>`);
+
+        this.$history.hide();
+        this.$input.hide();
+
+        this.playground.$playground.append(this.$history);
+        this.playground.$playground.append(this.$input);  
+        this.start();
+
+        //this.func_id = null;
+    }
+
+    start() {
+        this.add_listening_events();
+    }
+
+    add_listening_events() {
+        let outer = this;
+        this.$input.keydown(function(e) {
+            if (e.which == 27) { //关闭聊天框
+                outer.hide_input();
+                outer.hide_history();
+                return false;
+            }
+            else if (e.which == 13) { //发送消息
+                let username = outer.playground.root.settings.username;
+                let text = outer.$input.val();
+                if (text) {
+                    outer.$input.val("");
+                    outer.add_message(username, text);
+                    outer.playground.mps.send_message(text);
+                }
+                outer.show_history();
+                return false;
+            }
+        });
+    }
+
+    rend_message(message) { //渲染成html对象
+        return $(`<div>${message}</div>`)
+    }
+
+    add_message(username, text) {
+        let message = `[${username}]: ${text}`;
+        this.$history.append(this.rend_message(message));
+        this.$history.scrollTop(this.$history[0].scrollHeight);
+    }
+
+    show_history() {
+        let outer = this;
+        this.$history.fadeIn();
+        // if (this.func_id) {
+        //     clearTimeout(this.func_id);
+        // }
+        // this.func_id = setTimeout(function() {
+        //     outer.$history.fadeOut();
+        //     outer.func_id = null;
+        // }, 50000000); //5秒后关闭
+    }
+
+    show_input() {
+        this.show_history();
+        this.$input.show();
+        this.$input.focus();
+    }
+
+    hide_history() {
+        this.$history.hide();
+    }
+
+    hide_input() {
+        this.$input.hide();
+        this.playground.game_map.$canvas.focus();
+    }
+
+}class GameMap extends AcGameObject {
     constructor(playground) {
         super();
         this.playground = playground; //这个“MAP"是属于playground的
@@ -305,7 +385,7 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         
         this.playground.game_map.$canvas.mousedown(function(e) { //鼠标监听
             if (outer.playground.state != "fighting") {
-                return false;
+                return true;
             }
             const rect = outer.ctx.canvas.getBoundingClientRect();
             let tx = (e.clientX - rect.left) / outer.playground.scale;
@@ -341,10 +421,18 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         });
 
         this.playground.game_map.$canvas.keydown(function(e) {
-            if (outer.playground.state != "fighting") {
-                return false;
+            if (e.which == 13) { //回车键打开聊天框
+                if (outer.playground.mode == "multi mode") {
+                    outer.playground.chat_field.show_input();
+                    return false;
+                }
             }
-            if (e.which === 69 && outer.fireball_cd < outer.eps && outer.playground.state == "fighting") { //按下E，释放冰球技能
+            else if (e.which == 27) { //ESC键退出聊天框
+                if (outer.playground.mode == "multi mode") {
+                    outer.playground.chat_field.hide_input();
+                }
+            }
+            else if (e.which === 69 && outer.fireball_cd < outer.eps && outer.playground.state == "fighting") { //按下E，释放冰球技能
                 outer.cur_skill = "fireball";
             }
             else if (e.which == 81 && outer.iceball_cd < outer.eps && outer.playground.state == "fighting") { //按下Q，释放冰球技能
@@ -980,6 +1068,9 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
             else if (event == "attack") {
                 outer.receive_attack(uuid, data.attackee_uuid, data.x, data.y, data.angle, data.damage, data.damage_speed, data.is_speed_up, data.ball_uuid);
             }
+            else if (event == "message") {
+                outer.receive_message(uuid, data.text);
+            }
         };
     }
 
@@ -1063,6 +1154,15 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
         }))
     }
 
+    send_message(text) {
+        let outer = this;
+        this.ws.send(JSON.stringify({
+            'event': "message", 
+            'uuid': outer.uuid,
+            'text': text,
+        }));
+    }
+
 
 
     receive_create_player(uuid, username, photo) {
@@ -1120,6 +1220,11 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
             attackee.receive_attack(x, y, angle, damage, damage_speed, is_speed_up, ball_uuid, attacker);
         }
     }
+
+    receive_message(uuid, text) {
+        let player = this.get_player(uuid);
+        player.playground.chat_field.add_message(player.username, text);
+    }
 }class AcGamePlayground {
     constructor(root) {
         this.root = root;
@@ -1176,6 +1281,7 @@ requestAnimationFrame(AC_GAME_ANIMATION); class GameMap extends AcGameObject {
             this.players.push(new Player(this, this.width / 2 / this.scale, 0.5, 0.05, this.get_random_color(), 0.25, "robot"));
         }
         else if (mode == "multi mode") {
+            this.chat_field = new ChatField(this);
             this.mps = new MultiPlayerSocket(this);
             this.mps.uuid = this.players[0].uuid;
             this.mps.ws.onopen = function() {
