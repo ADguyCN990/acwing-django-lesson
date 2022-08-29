@@ -32,6 +32,7 @@ class Pool: #匹配池
     
     def add_player(self, player):
         self.players.append(player)
+        print("Add Player: %s %d" % (player.username, player.score))
 
     def check_match(self, a, b):
         dt = abs(a.score - b.score) #匹配到的两人的分数差
@@ -56,7 +57,7 @@ class Pool: #匹配池
         self.increase_waiting_time()
 
     def match_success(self, ps): #匹配成功后执行的函数
-        print("Match Success: %s %s" % (ps[0], ps[1]))
+        print("Match Success: %s %s" % (ps[0].username, ps[1].username))
 
     def increase_waiting_time(self):
         for player in self.players:
@@ -71,6 +72,7 @@ def get_player_from_queue():
 def worker(): #生产者消费者匹配，不断往匹配池中塞玩家，并发匹配
     pool = Pool()
     while (True):
+        #print("matching...")
         player = get_player_from_queue()
         if player:
             pool.add_player(player)
@@ -80,7 +82,7 @@ def worker(): #生产者消费者匹配，不断往匹配池中塞玩家，并�
 
 
 class MatchHandler:
-    def add_players(self, score, uuid, username, photo, channel_name):
+    def add_player(self, score, uuid, username, photo, channel_name):
         player = Player(score, uuid, username, photo, channel_name)
         queue.put(player)
         return 0

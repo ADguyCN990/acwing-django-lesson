@@ -3,6 +3,13 @@ from django.conf import settings
 from django.core.cache import cache
 import json
 
+from thrift import Thrift
+from thrift.transport import TSocket
+from thrift.transport import TTransport
+from thrift.protocol import TBinaryProtocol
+
+from match_system.src.match_server.match_service import Match
+
 class MultiPlayer(AsyncWebsocketConsumer):
     async def connect(self):
         print("建立连接")
@@ -32,26 +39,51 @@ class MultiPlayer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         print('disconnect')
-        await self.channel_layer.group_discard(self.room_name, self.channel_name)
+        if (self.room_name):
+            await self.channel_layer.group_discard(self.room_name, self.channel_name)
 
     async def create_player(self, data):
-        players = cache.get(self.room_name) #寻找当前对局的玩家
-        players.append({
-            'uuid': data['uuid'],
-            'username': data['username'],
-            'photo': data['photo'],
-        })       
-        cache.set(self.room_name, players, 3600) #创建玩家信息
-        await self.channel_layer.group_send(
-            self.room_name,
-            {
-                'type': "group_send_event",
-                'event': "create_player",
-                'uuid': data['uuid'],
-                'username': data['username'],
-                'photo': data['photo'], 
-            }
-        )
+        # players = cache.get(self.room_name) #寻找当前对局的玩家
+        # players.append({
+        #     'uuid': data['uuid'],
+        #     'username': data['username'],
+        #     'photo': data['photo'],
+        # })       
+        # cache.set(self.room_name, players, 3600) #创建玩家信息
+        # await self.channel_layer.group_send(
+        #     self.room_name,
+        #     {
+        #         'type': "group_send_event",
+        #         'event': "create_player",
+        #         'uuid': data['uuid'],
+        #         'username': data['username'],
+        #         'photo': data['photo'], 
+        #     }
+        # )
+
+        self.room_name = None
+        self.uuid = data['uuid']
+        # Make socket
+        transport = TSocket.TSocket('127.0.0.1', 9090)
+        # Buffering is critical. Raw sockets are very slow
+        transport = TTransport.TBufferedTransport(transport)
+
+        # Wrap in a protocol
+        protocol = TBinaryProtocol.TBinaryProtocol(transport)
+
+        # Create a client to use the protocol encoder
+        client = Match.Client(protocol)
+
+        # Connect!
+        transport.open()
+
+        client.add_player(1500, data['uuid'], data['username'], data['photo'], self.channel_name)
+
+        # Close!
+        transport.close()
+
+
+
 
     async def move_to(self, data):
         await self.channel_layer.group_send(
