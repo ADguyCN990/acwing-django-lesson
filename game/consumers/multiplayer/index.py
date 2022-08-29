@@ -10,32 +10,35 @@ from thrift.protocol import TBinaryProtocol
 
 from match_system.src.match_server.match_service import Match
 
+from game.models.player.player import Player
+from channels.db import database_sync_to_async
+
 class MultiPlayer(AsyncWebsocketConsumer):
     async def connect(self):
-        print("建立连接")
-        self.room_name = None
-        for i in range (1000):
-            name = "room-%d" % (i)
-            if not cache.has_key(name) or len(cache.get(name)) < settings.ROOM_CAPACITY:
-                self.room_name = name
-                break
-        if not self.room_name: #资源不够用了，排队  
-            return
+        # print("建立连接")
+        # self.room_name = None
+        # for i in range (1000):
+        #     name = "room-%d" % (i)
+        #     if not cache.has_key(name) or len(cache.get(name)) < settings.ROOM_CAPACITY:
+        #         self.room_name = name
+        #         break
+        # if not self.room_name: #资源不够用了，排队  
+        #     return
         
         await self.accept()
-        if not cache.has_key(self.room_name):
-            cache.set(self.room_name, [], 3600) #给当前申请对战的玩家开房，有效期一小时
+        # if not cache.has_key(self.room_name):
+        #     cache.set(self.room_name, [], 3600) #给当前申请对战的玩家开房，有效期一小时
 
-        for player in cache.get(self.room_name): #读取玩家信息
-            await self.send(text_data = json.dumps({
-                'event': "create_player",
-                'uuid': player['uuid'],
-                'username': player['username'],
-                'photo': player['photo'],
-            }))
+        # for player in cache.get(self.room_name): #读取玩家信息
+        #     await self.send(text_data = json.dumps({
+        #         'event': "create_player",
+        #         'uuid': player['uuid'],
+        #         'username': player['username'],
+        #         'photo': player['photo'],
+        #     }))
 
 
-        await self.channel_layer.group_add(self.room_name, self.channel_name)
+        # await self.channel_layer.group_add(self.room_name, self.channel_name)
 
     async def disconnect(self, close_code):
         print('disconnect')
@@ -74,10 +77,15 @@ class MultiPlayer(AsyncWebsocketConsumer):
         # Create a client to use the protocol encoder
         client = Match.Client(protocol)
 
+        def db_get_player():
+            return Player.objects.get(user__username = data['username'])
+
+        player = await database_sync_to_async(db_get_player)()
+
         # Connect!
         transport.open()
 
-        client.add_player(1500, data['uuid'], data['username'], data['photo'], self.channel_name)
+        client.add_player(player.score, data['uuid'], data['username'], data['photo'], self.channel_name)
 
         # Close!
         transport.close()
@@ -168,6 +176,10 @@ class MultiPlayer(AsyncWebsocketConsumer):
     
 
     async def group_send_event(self, data):
+        if not self.room_name:
+            keys = cache.keys('*%s*' % (self.uuid))
+            if keys:
+                self.room_name = keys[0]
         await self.send(text_data = json.dumps(data))
 
     async def receive(self, text_data):
