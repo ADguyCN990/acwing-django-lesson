@@ -87,6 +87,10 @@ class AcGameObject {
 
     }
 
+    late_update() { //渲染游戏结束界面
+
+    }
+
     on_destroy() { //被销毁前执行一次
 
     }
@@ -122,6 +126,10 @@ let AC_GAME_ANIMATION = function(timestamp) { //实现每个帧内的操作，�
         else {
             now.timedelta = timestamp - last_timestamp;
             now.update();
+        }
+        for (let i = 0; i < AC_GAME_OBJECTS.length; i++) {
+            let now = AC_GAME_OBJECTS[i];
+            now.late_update(); 
         }
 
     }
@@ -473,6 +481,23 @@ requestAnimationFrame(AC_GAME_ANIMATION); class ChatField {
         }
     }
 
+    on_destroy() {
+        if (this.character == "me") {
+            if (this.playground.state == "fighting") {
+                this.playground.state = "over";
+                this.playground.score_board.lose();
+            }
+        }
+            
+        
+        for (let i = 0; i < this.playground.players.length; i++) {
+            if (this.playground.players[i] == this) {
+                this.playground.players.splice(i, 1);
+                break;
+            }
+        }
+    }
+
     shoot_iceball(tx, ty) {
         //冰球，能减速，射速慢，半径大
         //if (this.ice_ball_cd > this.eps) return false;
@@ -560,15 +585,22 @@ requestAnimationFrame(AC_GAME_ANIMATION); class ChatField {
 
     update() { //除开始外的其他帧执行
         this.spent_time += this.timedelta / 1000;
+        this.update_win();
         this.update_move();
         if (this.character == "me" && this.playground.state == "fighting") {
             this.update_cd();
 
         }
-            
         this.render();
     }
 
+    update_win() {
+        if (this.playground.state == "fighting" && this.character == "me" && this.playground.players.length == 1) {
+            this.playground.state = "over";
+            this.playground.notice_board.write("我们是冠军咚咚咚咚!");
+            this.playground.score_board.win();
+        }
+    }
 
     update_cd() {
         this.fireball_cd = Math.max(0, this.fireball_cd - this.timedelta / 1000)
@@ -713,6 +745,63 @@ requestAnimationFrame(AC_GAME_ANIMATION); class ChatField {
             this.ctx.lineTo(x * scale, y * scale);
             this.ctx.fillStyle = "rgba(0, 0, 255, 0.6)";
             this.ctx.fill();
+        }
+    }
+}class ScoreBoard extends AcGameObject {
+    constructor(playground) {
+        super();
+        this.playground = playground;
+        this.ctx = this.playground.game_map.ctx;
+        this.state = null; //win, lose
+
+        this.win_image = new Image();
+        this.win_image.src = "https://cdn.acwing.com/media/article/image/2021/12/17/1_8f58341a5e-win.png";
+        this.lose_image = new Image();
+        this.lose_image.src = "https://cdn.acwing.com/media/article/image/2021/12/17/1_9254b5f95e-lose.png";
+
+    }
+
+    add_listening_events() { //返回home界面
+        let outer = this;
+        let $canvas = this.playground.game_map.$canvas;
+
+        $canvas.on('click', function() {
+            outer.playground.hide();
+            outer.playground.root.menu.show();
+        });
+    }
+
+    win() {
+        this.state = "win";
+        let outer = this;
+        setTimeout(function() {
+            outer.add_listening_events();
+        }, 1000);   //1秒后监听点击事件
+    }
+
+    lose() {
+        this.state = "lose";
+        let outer = this;
+        setTimeout(function() {
+            outer.add_listening_events();
+        }, 1000);   //1秒后监听点击事件
+    }
+
+    late_update() {
+        this.render();
+    }
+
+    start() {
+       //this.lose();
+    }
+
+    render() {
+        let len = this.playground.height / 2;
+        if (this.state == "win") {
+            this.ctx.drawImage(this.win_image, this.playground.width / 2 - len / 2, this.playground.height / 2 - len / 2, len, len);
+        }
+        else if (this.state == "lose") {
+            this.ctx.drawImage(this.lose_image, this.playground.width / 2 - len / 2, this.playground.height / 2 - len / 2, len, len);
         }
     }
 }class FireBall extends AcGameObject {
@@ -1272,6 +1361,7 @@ requestAnimationFrame(AC_GAME_ANIMATION); class ChatField {
         this.player_cnt = 0; //玩家人数
         this.game_map = new GameMap(this); //创建一个地图
         this.notice_board = new NoticeBoard(this);
+        this.score_board = new ScoreBoard(this);
         this.resize();
         this.players = []; //创建一个存储玩家信息的列表
         this.players.push(new Player(this, this.width / 2 / this.scale, 0.5, 0.05, "white", 0.25, "me", this.root.settings.username, this.root.settings.photo));
@@ -1292,6 +1382,23 @@ requestAnimationFrame(AC_GAME_ANIMATION); class ChatField {
     }
 
     hide() {  // 关闭playground界面
+        //清空所有游戏元素
+        while (this.players && this.players.length > 0) {
+            this.players[0].destroy();
+        }
+        if (this.game_map) {
+            this.game_map.destroy();
+            this.game_map = null;
+        }
+        if (this.notice_board) {
+            this.notice_board.destroy();
+            this.notice_board = null;
+        }
+        if (this.score_board) {
+            this.score_board.destroy();
+            this.score_board = null;
+        }
+        this.$playground.empty();   //清空所有html标签
         this.$playground.hide();
     }
 }

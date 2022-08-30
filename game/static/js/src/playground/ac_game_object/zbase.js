@@ -26,6 +26,10 @@ class AcGameObject {
 
     }
 
+    late_update() { //渲染游戏结束界面
+
+    }
+
     on_destroy() { //被销毁前执行一次
 
     }
@@ -61,6 +65,10 @@ let AC_GAME_ANIMATION = function(timestamp) { //实现每个帧内的操作，�
         else {
             now.timedelta = timestamp - last_timestamp;
             now.update();
+        }
+        for (let i = 0; i < AC_GAME_OBJECTS.length; i++) {
+            let now = AC_GAME_OBJECTS[i];
+            now.late_update(); 
         }
 
     }

@@ -158,6 +158,23 @@ class Player extends AcGameObject {
         }
     }
 
+    on_destroy() {
+        if (this.character == "me") {
+            if (this.playground.state == "fighting") {
+                this.playground.state = "over";
+                this.playground.score_board.lose();
+            }
+        }
+            
+        
+        for (let i = 0; i < this.playground.players.length; i++) {
+            if (this.playground.players[i] == this) {
+                this.playground.players.splice(i, 1);
+                break;
+            }
+        }
+    }
+
     shoot_iceball(tx, ty) {
         //冰球，能减速，射速慢，半径大
         //if (this.ice_ball_cd > this.eps) return false;
@@ -245,15 +262,22 @@ class Player extends AcGameObject {
 
     update() { //除开始外的其他帧执行
         this.spent_time += this.timedelta / 1000;
+        this.update_win();
         this.update_move();
         if (this.character == "me" && this.playground.state == "fighting") {
             this.update_cd();
 
         }
-            
         this.render();
     }
 
+    update_win() {
+        if (this.playground.state == "fighting" && this.character == "me" && this.playground.players.length == 1) {
+            this.playground.state = "over";
+            this.playground.notice_board.write("我们是冠军咚咚咚咚!");
+            this.playground.score_board.win();
+        }
+    }
 
     update_cd() {
         this.fireball_cd = Math.max(0, this.fireball_cd - this.timedelta / 1000)

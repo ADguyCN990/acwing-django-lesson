@@ -45,10 +45,10 @@ class AcGamePlayground {
         this.player_cnt = 0; //玩家人数
         this.game_map = new GameMap(this); //创建一个地图
         this.notice_board = new NoticeBoard(this);
+        this.score_board = new ScoreBoard(this);
         this.resize();
         this.players = []; //创建一个存储玩家信息的列表
         this.players.push(new Player(this, this.width / 2 / this.scale, 0.5, 0.05, "white", 0.25, "me", this.root.settings.username, this.root.settings.photo));
-        this.score_board = new ScoreBoard(this);
         
         if (mode == "single mode") {
             for (let i = 0; i < 6; i++)
@@ -66,6 +66,23 @@ class AcGamePlayground {
     }
 
     hide() {  // 关闭playground界面
+        //清空所有游戏元素
+        while (this.players && this.players.length > 0) {
+            this.players[0].destroy();
+        }
+        if (this.game_map) {
+            this.game_map.destroy();
+            this.game_map = null;
+        }
+        if (this.notice_board) {
+            this.notice_board.destroy();
+            this.notice_board = null;
+        }
+        if (this.score_board) {
+            this.score_board.destroy();
+            this.score_board = null;
+        }
+        this.$playground.empty();   //清空所有html标签
         this.$playground.hide();
     }
 }
