@@ -48,6 +48,7 @@ class AcGamePlayground {
         this.resize();
         this.players = []; //创建一个存储玩家信息的列表
         this.players.push(new Player(this, this.width / 2 / this.scale, 0.5, 0.05, "white", 0.25, "me", this.root.settings.username, this.root.settings.photo));
+        this.score_board = new ScoreBoard(this);
         
         if (mode == "single mode") {
             for (let i = 0; i < 6; i++)
